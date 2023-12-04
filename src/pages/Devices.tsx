@@ -12,7 +12,8 @@ import {
   IonButtons,
   IonGrid,
   IonRow,
-  IonCol, 
+  IonCol,
+  IonMenuButton, 
 } from '@ionic/react';
 import { checkmark } from 'ionicons/icons';
 import ExploreContainer from '../components/ExploreContainer';
@@ -21,7 +22,7 @@ import './Devices.css';
 import { BluetoothSerial } from '@awesome-cordova-plugins/bluetooth-serial'
 import { useEffect, useState } from 'react';
 
-import { BluetoothDevice, DeviceProps } from '../types'
+import { BluetoothDevice, DeviceProps } from '../types/device'
 
 const Devices: React.FC<{
   devices: BluetoothDevice[], 
@@ -34,9 +35,18 @@ const Devices: React.FC<{
 
   useEffect(() => {
     // listDevices()
-    console.log("test: ",props.devices)
-    console.log('selectedDevice: ', props.selectedDevice)
-  })
+    // console.log("test: ",props.devices)
+    // console.log('selectedDevice: ', props.selectedDevice)
+
+    setDevices([
+      {
+        class: 1,
+        id: '1',
+        address: 'FF:FF:FF:FF',
+        name: 'Device 1'
+      }
+    ])
+  }, [])
   const scanDevices = async () => {
     if (!isScanning) {
       setIsScanning(true)
@@ -57,6 +67,9 @@ const Devices: React.FC<{
       <IonHeader>
         <IonToolbar>
           <IonTitle>Devices</IonTitle>
+          <IonButtons slot='start'>
+            <IonMenuButton></IonMenuButton>
+          </IonButtons>
           <IonButtons slot="end" style={{ marginRight: '15px'}}>
             <IonButton fill="solid" color={'primary'} onClick={scanDevices}>
               { isScanning ? 'Scanning...' : 'Scan' }
@@ -64,7 +77,7 @@ const Devices: React.FC<{
           </IonButtons>
         </IonToolbar>
       </IonHeader>
-      <IonContent color={'light'}>
+      <IonContent>
         <IonHeader collapse="condense">
           <IonToolbar>
             <IonTitle size="large">Devices</IonTitle>
@@ -81,9 +94,9 @@ const Devices: React.FC<{
           </IonList>
         }
         { devices.length == 0 &&
-          <IonGrid>
+          <IonGrid> 
             <IonRow>
-              <IonCol>
+              <IonCol className='ion-padding'>
                 <IonLabel>Please click scan to get devices.</IonLabel>
               </IonCol>
             </IonRow>

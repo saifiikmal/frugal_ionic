@@ -1,7 +1,7 @@
-import { IonButton, IonButtons, IonCard, IonCardContent, IonCardHeader, IonCardTitle, IonCol, IonContent, IonDatetime, IonDatetimeButton, IonGrid, IonHeader, IonInput, IonItem, IonLabel, IonList, IonModal, IonPage, IonRow, IonTitle, IonToolbar } from '@ionic/react';
+import { IonButton, IonButtons, IonCard, IonCardContent, IonCardHeader, IonCardTitle, IonCol, IonContent, IonDatetime, IonDatetimeButton, IonGrid, IonHeader, IonInput, IonItem, IonLabel, IonList, IonMenuButton, IonModal, IonPage, IonRow, IonTitle, IonToolbar } from '@ionic/react';
 import ExploreContainer from '../components/ExploreContainer';
 import './Settings.css';
-import { BluetoothDevice, DeviceData } from '../types';
+import { BluetoothDevice, DeviceData } from '../types/device';
 import moment from 'moment';
 import { useEffect, useState } from 'react';
 import { BluetoothSerial } from '@awesome-cordova-plugins/bluetooth-serial';
@@ -13,6 +13,7 @@ interface SettingsProps {
   deviceData: DeviceData | null,
   onUpdateData(): any,
   onSetLoading(val: boolean): any,
+  dispenser: any,
 }
 const Settings: React.FC<{
   selectedDevice: BluetoothDevice | null,
@@ -21,6 +22,7 @@ const Settings: React.FC<{
   deviceData: DeviceData | null,
   onUpdateData(): any,
   onSetLoading(val: boolean): any,
+  dispenser: any,
 }> = (props: SettingsProps) => {
 
   const [startDate, setStartDate] = useState<number | null>(null)
@@ -89,6 +91,9 @@ const Settings: React.FC<{
       <IonHeader>
         <IonToolbar>
           <IonTitle>Settings</IonTitle>
+          <IonButtons slot='start'>
+            <IonMenuButton></IonMenuButton>
+          </IonButtons>
           <IonButtons slot="end" style={{ marginRight: '15px'}}>
             <IonButton fill="solid" color={'primary'} onClick={connectDevice}>
               { props.isConnected ? 'Disconnect' : 'Connect' }
@@ -128,7 +133,7 @@ const Settings: React.FC<{
               </IonCardContent>
               <IonButton onClick={syncClock}>SYNC</IonButton>
             </IonCard>
-            <IonCard>
+            {/* <IonCard>
               <IonCardHeader>
                 <IonCardTitle>Device Settings</IonCardTitle>
               </IonCardHeader>
@@ -157,17 +162,9 @@ const Settings: React.FC<{
                     <IonInput onIonInput={(e: any) => setTimeInterval(e.target.value)} type="number" placeholder="0" value={props.deviceData ? interval ? interval : props.deviceData.interval : null}></IonInput>
                   </IonItem>
                 </IonList>
-                {/* <IonGrid>
-                  <IonRow>
-                    <IonCol size='5'>
-                      Device ID
-                    </IonCol>
-                    <IonCol size='7'>Clock</IonCol>
-                  </IonRow>
-                </IonGrid> */}
               </IonCardContent>
               <IonButton onClick={updateData}>Save</IonButton>
-            </IonCard>
+            </IonCard> */}
           </>
         
         // <IonGrid>
@@ -205,11 +202,31 @@ const Settings: React.FC<{
         //   </IonGrid>
         }
         { 
-          !props.isConnected && 
+          props.dispenser && !props.isConnected && 
           <IonGrid>
             <IonRow>
-              <IonCol>
+              <IonCol className='ion-padding'>
                 <IonLabel>Please connect to the device.</IonLabel>
+              </IonCol>
+            </IonRow>
+          </IonGrid>
+        }
+        { 
+          props.selectedDevice && !props.dispenser  && 
+          <IonGrid>
+            <IonRow>
+              <IonCol className='ion-padding'>
+                <IonLabel>Unregistered device. Please make sure you have registered the device.</IonLabel>
+              </IonCol>
+            </IonRow>
+          </IonGrid>
+        }
+        { 
+          !props.selectedDevice  && 
+          <IonGrid>
+            <IonRow>
+              <IonCol className='ion-padding'>
+                <IonLabel>Please select the device first.</IonLabel>
               </IonCol>
             </IonRow>
           </IonGrid>

@@ -1,0 +1,58 @@
+.daily-indicator {
+  background: var(--ion-color-primary);
+
+  width: 30px;
+  height: 30px;
+
+  border-radius: 50%;
+
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-size: 16px;
+}
+
+.weekly-indicator {
+  background: var(--ion-color-success);
+
+  width: 30px;
+  height: 30px;
+
+  border-radius: 50%;
+
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-size: 16px;
+  top: 0px;
+}
+
+.schedule-list {
+  display: flex;
+}
+
+.metadata-end-wrapper {
+  position: absolute;
+
+  top: 10px;
+  inset-inline-end: 10px;
+
+  font-size: 0.8rem;
+
+  display: flex;
+  align-items: center;
+}
+
+ion-label strong {
+  display: block;
+
+  max-width: calc(100% - 60px);
+
+  overflow: hidden;
+
+  text-overflow: ellipsis;
+}
+
+ion-label ion-note {
+  font-size: 0.9rem;
+}

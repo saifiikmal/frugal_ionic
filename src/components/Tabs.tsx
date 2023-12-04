@@ -1,67 +1,36 @@
-import { Redirect, Route } from 'react-router-dom';
-import {
-  IonApp,
-  IonContent,
-  IonHeader,
+import { 
   IonIcon,
   IonLabel,
   IonLoading,
-  IonMenu,
   IonRouterOutlet,
-  IonSplitPane,
   IonTabBar,
   IonTabButton,
   IonTabs,
-  IonTitle,
-  IonToolbar,
-  setupIonicReact
 } from '@ionic/react';
-import { IonReactRouter } from '@ionic/react-router';
+import { Redirect, Route } from 'react-router-dom';
+import './Tabs.css';
+import { useEffect, useRef, useState } from 'react';
 import { ellipse, square, triangle, list, home, settings } from 'ionicons/icons';
-import Devices from './pages/Devices';
-import Home from './pages/Home';
-import Settings from './pages/Settings';
-import Login from './pages/Login';
 
-/* Core CSS required for Ionic components to work properly */
-import '@ionic/react/css/core.css';
-
-/* Basic CSS for apps built with Ionic */
-import '@ionic/react/css/normalize.css';
-import '@ionic/react/css/structure.css';
-import '@ionic/react/css/typography.css';
-
-/* Optional CSS utils that can be commented out */
-import '@ionic/react/css/padding.css';
-import '@ionic/react/css/float-elements.css';
-import '@ionic/react/css/text-alignment.css';
-import '@ionic/react/css/text-transformation.css';
-import '@ionic/react/css/flex-utils.css';
-import '@ionic/react/css/display.css';
-
-/* Theme variables */
-import './theme/variables.css';
+import Devices from '../pages/Devices';
+import Home from '../pages/Home';
+import Settings from '../pages/Settings';
 
 import { AndroidPermissions } from '@awesome-cordova-plugins/android-permissions'
 import { BluetoothSerial } from '@awesome-cordova-plugins/bluetooth-serial'
-import { useEffect, useState } from 'react';
 
-import { BluetoothDevice, DeviceProps, DeviceData } from './types/device'
-import Tabs from './components/Tabs';
-import Menu from './components/Menu';
+import { BluetoothDevice, DeviceProps, DeviceData } from '../types/device'
+import DispenserAPI from '../api/dispenser'
+import Register from '../pages/Register';
+import Schedule from '../pages/Schedule';
 
-import { useAuth } from './context/authContext'
-
-setupIonicReact();
-
-const App: React.FC = () => {
+const Tabs: React.FC = () => {
   const [devices, setDevices] = useState([]); 
   const [selectedDevice, setSelectedDevice] = useState<BluetoothDevice | null>(null)
   const [isConnected, setConnected] = useState(false)
   const [deviceData, setDeviceData] = useState<DeviceData | null>(null)
   const [isLoading, setIsLoading] = useState<boolean>(false)
-
-  const { loggedIn } = useAuth();
+  const [dispenser, setDispenser] = useState(null)
 
   useEffect(() => {
     console.log('componentDidMount');
@@ -115,9 +84,22 @@ const App: React.FC = () => {
     BluetoothSerial.discoverUnpaired()
   }
 
-  const onSelectDevice = (device: BluetoothDevice) => {
+  const onSelectDevice = async (device: BluetoothDevice) => {
     console.log('parent select device: ', device)
     setSelectedDevice(device)
+
+    if (device) {
+      try {
+        const resp = await DispenserAPI.getDispenserByMacAddress(device.address)
+      
+        console.log(resp.data)
+
+        setDispenser(resp.data)
+
+      } catch (err) {
+        alert('Unregistered device. Please make sure you have registered the device.')
+      }
+    }
   }
 
   const onConnected = async () => {
@@ -199,82 +181,78 @@ const App: React.FC = () => {
     await BluetoothSerial.write("GET")
     setIsLoading(false)
   }
-   
   return (
-    <IonApp>
-      { !loggedIn ? (
-      <IonReactRouter>
-          <Route exact path="/">
-            <Login />
-          </Route>
-          <Route exact path="*">
-            <Redirect to="/" />
-          </Route>
-      </IonReactRouter>
-      )
-      :
-      (
-      <IonReactRouter>
-        <IonSplitPane contentId="main">
-          <Menu />
-          <IonRouterOutlet id="main">
-            <Route path="/">
-              <Tabs />
-            </Route>
-            {/* <Route exact path="/">
-              <Redirect to="/tabs" />
-            </Route> */}
-          </IonRouterOutlet>
-        </IonSplitPane>
-        {/* <IonTabs>
-          <IonRouterOutlet>
-            <Route exact path="/devices">
-              <Devices devices={devices} selectedDevice={selectedDevice} onSelectDevice={onSelectDevice} />
-            </Route>
-            <Route exact path="/home">
-              <Home 
-                selectedDevice={selectedDevice} 
-                isConnected={isConnected} 
-                onConnected={onConnected}
-                deviceData={deviceData}
-                onSetLoading={(val: boolean) => setIsLoading(val)}
-              />
-            </Route>
-            <Route path="/settings">
-              <Settings 
-                selectedDevice={selectedDevice} 
-                isConnected={isConnected} 
-                onConnected={onConnected}
-                deviceData={deviceData}
-                onUpdateData={onUpdateData}
-                onSetLoading={(val: boolean) => setIsLoading(val)}
-              />
-            </Route>
-            
-            <Route exact path="/">
-              <Redirect to="/home" />
-            </Route>
-          </IonRouterOutlet>
-          <IonTabBar slot="bottom">
-            <IonTabButton tab="devices" href="/devices">
-              <IonIcon aria-hidden="true" icon={list} />
-              <IonLabel>Devices</IonLabel>
-            </IonTabButton>
-            <IonTabButton tab="home" href="/home">
-              <IonIcon aria-hidden="true" icon={home} />
-              <IonLabel>Home</IonLabel>
-            </IonTabButton>
-            <IonTabButton tab="settings" href="/settings">
-              <IonIcon aria-hidden="true" icon={settings} />
-              <IonLabel>Settings</IonLabel>
-            </IonTabButton>
-          </IonTabBar>
-        </IonTabs> */}
-      </IonReactRouter>
-      )
-    }
-    </IonApp>
-  );
+    <>
+      <IonLoading isOpen={isLoading} />
+      <IonTabs>
+      <IonRouterOutlet>
+        <Route exact path="/devices">
+          <Devices 
+            devices={devices} 
+            selectedDevice={selectedDevice} 
+            onSelectDevice={onSelectDevice} 
+          />
+        </Route>
+        <Route exact path="/home">
+          <Home 
+            selectedDevice={selectedDevice} 
+            isConnected={isConnected} 
+            onConnected={onConnected}
+            deviceData={deviceData}
+            onSetLoading={(val: boolean) => setIsLoading(val)}
+            dispenser={dispenser}
+          />
+        </Route>
+        <Route path="/settings">
+          <Settings 
+            selectedDevice={selectedDevice} 
+            isConnected={isConnected} 
+            onConnected={onConnected}
+            deviceData={deviceData}
+            onUpdateData={onUpdateData}
+            onSetLoading={(val: boolean) => setIsLoading(val)}
+            dispenser={dispenser}
+          />
+        </Route>
+        <Route path="/register">
+          <Register 
+            selectedDevice={selectedDevice}
+            dispenser={dispenser} 
+          />
+        </Route>
+        <Route path="/schedule">
+          <Schedule 
+            isConnected={isConnected} 
+            onConnected={onConnected}
+            selectedDevice={selectedDevice}
+            dispenser={dispenser} 
+            onSelectDevice={onSelectDevice} 
+          />
+        </Route>
+        {/* <Route path="/login">
+          <Login />
+        </Route> */}
+        <Route exact path="/">
+          <Redirect to="/home" />
+        </Route>
+      </IonRouterOutlet>
+      <IonTabBar slot="bottom">
+        <IonTabButton tab="devices" href="/devices">
+          <IonIcon aria-hidden="true" icon={list} />
+          <IonLabel>Devices</IonLabel>
+        </IonTabButton>
+        <IonTabButton tab="home" href="/home">
+          <IonIcon aria-hidden="true" icon={home} />
+          <IonLabel>Home</IonLabel>
+        </IonTabButton>
+        <IonTabButton tab="settings" href="/settings">
+          <IonIcon aria-hidden="true" icon={settings} />
+          <IonLabel>Settings</IonLabel>
+        </IonTabButton>
+      </IonTabBar>
+    </IonTabs>
+    </>
+  )
 }
 
-export default App;
+export default Tabs;

@@ -1,9 +1,10 @@
-import { IonButton, IonButtons, IonCol, IonContent, IonGrid, IonHeader, IonLabel, IonLoading, IonPage, IonRow, IonTitle, IonToolbar } from '@ionic/react';
+import { IonButton, IonButtons, IonCol, IonContent, IonGrid, IonHeader, IonLabel, IonLoading, IonMenuButton, IonPage, IonRow, IonTitle, IonToolbar } from '@ionic/react';
 import ExploreContainer from '../components/ExploreContainer';
 import './Home.css';
-import { BluetoothDevice, DeviceData } from '../types';
+import { BluetoothDevice, DeviceData } from '../types/device';
 import { useEffect, useRef, useState } from 'react';
 import moment from 'moment';
+import DispenserAPI from '../api/dispenser'
 
 import { BluetoothSerial } from '@awesome-cordova-plugins/bluetooth-serial'
 
@@ -13,6 +14,7 @@ interface HomeProps {
   onConnected(): any,
   deviceData: DeviceData | null,
   onSetLoading(val: boolean): any,
+  dispenser: any,
 }
 
 const Home: React.FC<{
@@ -21,6 +23,7 @@ const Home: React.FC<{
   onConnected(): any,
   deviceData: DeviceData | null,
   onSetLoading(val: boolean): any,
+  dispenser: any
 }> = (props: HomeProps) => {
   // const [isConnected, setConnected] = useState(props.isConnected)
 
@@ -42,6 +45,9 @@ const Home: React.FC<{
       <IonHeader>
         <IonToolbar>
           <IonTitle>Home</IonTitle>
+          <IonButtons slot='start'>
+            <IonMenuButton></IonMenuButton>
+          </IonButtons>
           <IonButtons slot="end" style={{ marginRight: '15px'}}>
             <IonButton fill="solid" color={'primary'} onClick={connectDevice}>
               { props.isConnected ? 'Disconnect' : 'Connect' }
@@ -114,11 +120,31 @@ const Home: React.FC<{
           </IonGrid>
         }
         { 
-          !props.isConnected && 
+          props.dispenser && !props.isConnected && 
           <IonGrid>
             <IonRow>
-              <IonCol>
+              <IonCol className='ion-padding'>
                 <IonLabel>Please connect to the device.</IonLabel>
+              </IonCol>
+            </IonRow>
+          </IonGrid>
+        }
+        { 
+          props.selectedDevice && !props.dispenser  && 
+          <IonGrid>
+            <IonRow>
+              <IonCol className='ion-padding'>
+                <IonLabel>Unregistered device. Please make sure you have registered the device.</IonLabel>
+              </IonCol>
+            </IonRow>
+          </IonGrid>
+        }
+        { 
+          !props.selectedDevice  && 
+          <IonGrid>
+            <IonRow>
+              <IonCol className='ion-padding'>
+                <IonLabel>Please select the device first.</IonLabel>
               </IonCol>
             </IonRow>
           </IonGrid>
