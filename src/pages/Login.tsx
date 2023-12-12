@@ -18,30 +18,19 @@ import {
 } from '@ionic/react';
 import './Login.css';
 import { useEffect, useRef, useState } from 'react';
-import moment from 'moment';
 import { personCircle } from 'ionicons/icons';
 import {useHistory} from 'react-router-dom'
 import { useAuth } from '../context/authContext'
 
 const Login: React.FC = () => {
   const history = useHistory();
-  const [username, setUsername] = useState<string>("eve.holt@reqres.in");
-  const [password, setPassword] = useState<string>("cityslicka");
+  const [username, setUsername] = useState<string>("");
+  const [password, setPassword] = useState<string>("");
   const [iserror, setIserror] = useState<boolean>(false);
   const [message, setMessage] = useState<string>("");
 
   const { loading, error, login } = useAuth();
   const handleLogin = async () => {
-    // if (!email) {
-    //     setMessage("Please enter a valid email");
-    //     setIserror(true);
-    //     return;
-    // }
-    // if (validateEmail(email) === false) {
-    //     setMessage("Your email is invalid");
-    //     setIserror(true);
-    //     return;
-    // }
 
     if (!password || password.length < 6) {
         setMessage("Please enter your password");
@@ -63,18 +52,7 @@ const Login: React.FC = () => {
       </IonHeader>
       <IonContent fullscreen className="ion-padding ion-text-center">
         <IonGrid>
-        {/* <IonRow>
-          <IonCol>
-            <IonAlert
-                isOpen={error != null}
-                onDidDismiss={() => setIserror(false)}
-                cssClass="my-custom-class"
-                header={"Error!"}
-                message={error != null ? error : ''}
-                buttons={["Dismiss"]}
-            />
-          </IonCol>
-        </IonRow> */}
+        
         <IonRow>
           <IonCol>
             <IonIcon
@@ -86,7 +64,6 @@ const Login: React.FC = () => {
           <IonRow>
             <IonCol>
             <IonItem className='ion-margin-top'>
-            {/* <IonLabel position="floating"> Username</IonLabel> */}
             <IonInput
                 label='Username'
                 labelPlacement='floating'
@@ -102,7 +79,6 @@ const Login: React.FC = () => {
           <IonRow>
             <IonCol>
             <IonItem>
-              {/* <IonLabel position="floating"> Password</IonLabel> */}
               <IonInput
                 label='Password'
                 labelPlacement='floating'

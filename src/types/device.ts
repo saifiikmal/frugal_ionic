@@ -13,12 +13,15 @@ export interface DeviceProps {
 
 export interface DeviceData {
   id: string,
+  dispenserSno: string,
+  canisterSno: string,
   currentTime: number,
-  startDate: number,
-  endDate: number,
-  interval: number,
-  nextInterval: number,
-  lastInterval: number,
+  sprayPressDuration: number,
+  pauseBetweenSpray: number,
+  lastDispense: number,
+  lastDispenseCounter: number,
   counter: number,
+  dispenseLimit: number,
   status: number,
+  isSync: number,
 }

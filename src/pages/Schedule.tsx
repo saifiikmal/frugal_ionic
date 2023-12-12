@@ -42,21 +42,24 @@ import DispenserAPI from '../api/dispenser'
 import CanisterAPI from '../api/canister'
 import './Schedule.css'
 import { OverlayEventDetail } from '@ionic/react/dist/types/components/react-component-lib/interfaces';
+import { BluetoothSerial } from '@awesome-cordova-plugins/bluetooth-serial';
 
 interface ScheduleProps {
   isConnected: boolean,
   selectedDevice: BluetoothDevice | null,
   dispenser: any,
-  onConnected(): any,
+  onConnected(device: BluetoothDevice | null): any,
   onSelectDevice: any,
+  onSetLoading(val: boolean): any,
 }
 
 const Schedule: React.FC<{
   isConnected: boolean,
   selectedDevice: BluetoothDevice | null,
   dispenser: any,
-  onConnected(): any,
+  onConnected(device: BluetoothDevice | null): any,
   onSelectDevice: any,
+  onSetLoading(val: boolean): any,
 }> = (props: ScheduleProps) => {
 
   const [dispenserTime, setDispenserTime] = useState<any | null>(null)
@@ -65,28 +68,33 @@ const Schedule: React.FC<{
   const [isOpen, setIsOpen] = useState<boolean>(false);
   const [action, setAction] = useState<string | null>(null)
 
-  const [message, setMessage] = useState(
-    'This modal example uses triggers to automatically open a modal when the button is clicked.'
-  );
+  const prevDispenser = useRef<any>()
 
-  // useEffect(() => {
-  //   const initialize = async () => {
-  //     console.log("selected Device: ", props.selectedDevice)
+  // const [message, setMessage] = useState(
+  //   'This modal example uses triggers to automatically open a modal when the button is clicked.'
+  // );
 
-  //     if (props.selectedDevice && props.dispenser) {
-  //       console.log('dispenser: ', props.dispenser)
-  //       // const device = await DispenserAPI
-  //     }
-  //   }
+  useEffect(() => {
+    
+    if (prevDispenser.current) {
+      if (prevDispenser.current.dispenser != props.dispenser) {
+        // console.log('props dispenser changed')
+        // console.log('prev: ', prevDispenser.current.dispenser)
+        // console.log('next: ', props.dispenser)
 
-  //   initialize()
-  // }, [props.selectedDevice, props.dispenser])
+        syncTimer()
+      }
+    }
+    
+    prevDispenser.current = { dispenser: props.dispenser }
 
-  const syncDevice = () => {
-    if (props.selectedDevice) {
-      props.onConnected()
+  })
+
+  const syncDevice = async () => {
+    if (props.selectedDevice && props.isConnected) {
+      await syncTimer()
     } else {
-      alert("Please select the device first.")
+      alert("Please select the device & connect first.")
     }
   }
 
@@ -94,7 +102,7 @@ const Schedule: React.FC<{
     event == null ? setLoading(true) : null
     setTimeout(() => {
       // Any calls to load data go here
-      props.onSelectDevice(props.selectedDevice)
+      props.onSelectDevice()
       event ? event.detail.complete() : setLoading(false)
     }, 2000);
   }
@@ -105,12 +113,13 @@ const Schedule: React.FC<{
         if (action == 'edit') {
           const resp = await DispenserAPI.updateDispenserTime(dispenserTime.id, dispenserTime)
 
-          console.log({resp})
+          // console.log({resp})
         } else {
           const resp = await DispenserAPI.createDispenserTime(dispenserTime)
 
-          console.log({resp})
+          // console.log({resp})
         }
+
       }
       setIsOpen(false)
       handleRefresh(null)
@@ -147,13 +156,40 @@ const Schedule: React.FC<{
   }
 
   const onChange = (field: string, val: any) => {
-    console.log('select: ', val)
+    // console.log('select: ', val)
     const newTime = {
       ...dispenserTime,
       [field]: val
     }
     setDispenserTime(newTime)
-    console.log({newTime})
+    // console.log({newTime})
+  }
+
+  const syncTimer = async () => {
+
+    if (props.selectedDevice && props.isConnected) {
+      let timers = []
+      for (let val of props.dispenser.dispensertimes) {
+        const vType = val.timerType == 'weekly' ? 'W' : 'D'
+        const vTime = val.timerTime
+        const vAmount = String(val.dispenseAmount).padStart(3, '0')
+        const sunday = val.sunday ? 1 : 0
+        const monday = val.monday ? 1 : 0
+        const tuesday = val.tuesday ? 1 : 0
+        const wednesday = val.wednesday ? 1 : 0
+        const thursday = val.thursday ? 1 : 0
+        const friday = val.friday ? 1 : 0
+        const saturday = val.saturday ? 1 : 0
+
+        timers.push(`${vType},${vTime},${vAmount},${sunday},${monday},${tuesday},${wednesday},${thursday},${friday},${saturday}`)
+      }
+      if (timers.length > 0) {
+        await BluetoothSerial.write(`TIMER:${timers.join('|')}`)
+        props.onSetLoading(true)
+      } else {
+        alert('Nothing to sync')
+      }
+    }
   }
 
   return (
@@ -176,7 +212,7 @@ const Schedule: React.FC<{
         <IonRefresher slot="fixed" onIonRefresh={handleRefresh}>
           <IonRefresherContent></IonRefresherContent>
         </IonRefresher>
-        { props.selectedDevice && props.dispenser && props.dispenser.dispensertimes.length && 
+        { props.selectedDevice && props.dispenser && 
         <>
         <IonList>
           { props.dispenser.dispensertimes.map((times: any) => {
@@ -202,22 +238,13 @@ const Schedule: React.FC<{
                   </div>
                   <IonLabel className="ion-align-items-center" style={{display: 'flex'}}>
                     <strong>{timerTime} - {times.timerType === 'daily' ? 'Daily' : `Every ${arrWeekly.join(', ')}`}</strong>
-                    {/* <IonText>Never Gonna Give You Up</IonText> */}
                     <br />
-                    {/*
-                    <IonNote color="medium" className="ion-text-wrap">
-                      Dispense amount: 400
-                    </IonNote> */}
                   </IonLabel>
                   <div slot="end">
                     <IonNote color="medium">{times.dispenseAmount}</IonNote>
-                    {/* <IonIcon color="medium" icon={chevronForward}></IonIcon> */}
                   </div>
                 </IonItem>
                 <IonItemOptions side="end">
-                  {/* <IonItemOption>
-                    <IonIcon slot="icon-only" icon={pencil}></IonIcon>
-                  </IonItemOption> */}
                   <IonItemOption color="danger">
                     <IonIcon slot="icon-only" icon={trash} onClick={() => deleteDispenserTime(times.id)}></IonIcon>
                   </IonItemOption>
@@ -274,7 +301,6 @@ const Schedule: React.FC<{
                   <IonDatetimeButton datetime="timerTime"></IonDatetimeButton>
 
                   <IonModal keepContentsMounted={true}>
-                    {/* <IonDatetime onIonChange={e => onChangeDate("endDate", e.detail.value)} id="endDate" value={ props.deviceData ? endDate ? moment.unix(endDate).format("YYYY-MM-DDTHH:mm") : moment.unix(props.deviceData.endDate).format("YYYY-MM-DDTHH:mm") : null}></IonDatetime> */}
                     <IonDatetime 
                       id="timerTime" 
                       presentation='time'
@@ -358,16 +384,7 @@ const Schedule: React.FC<{
           </IonGrid>
           </IonContent>
         </IonModal>
-      {/* { 
-        props.dispenser && !props.isConnected && 
-        <IonGrid>
-          <IonRow>
-            <IonCol className='ion-padding'>
-              <IonLabel>Please connect to the device.</IonLabel>
-            </IonCol>
-          </IonRow>
-        </IonGrid>
-      } */}
+      
       { 
         props.selectedDevice && !props.dispenser  && 
         <IonGrid>

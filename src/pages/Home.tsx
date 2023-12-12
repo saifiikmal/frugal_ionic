@@ -1,17 +1,13 @@
 import { IonButton, IonButtons, IonCol, IonContent, IonGrid, IonHeader, IonLabel, IonLoading, IonMenuButton, IonPage, IonRow, IonTitle, IonToolbar } from '@ionic/react';
-import ExploreContainer from '../components/ExploreContainer';
 import './Home.css';
 import { BluetoothDevice, DeviceData } from '../types/device';
 import { useEffect, useRef, useState } from 'react';
 import moment from 'moment';
-import DispenserAPI from '../api/dispenser'
-
-import { BluetoothSerial } from '@awesome-cordova-plugins/bluetooth-serial'
 
 interface HomeProps {
   selectedDevice: BluetoothDevice | null,
   isConnected: boolean,
-  onConnected(): any,
+  onConnected(device: BluetoothDevice | null): any,
   deviceData: DeviceData | null,
   onSetLoading(val: boolean): any,
   dispenser: any,
@@ -20,21 +16,19 @@ interface HomeProps {
 const Home: React.FC<{
   selectedDevice: BluetoothDevice | null,
   isConnected: boolean,
-  onConnected(): any,
+  onConnected(device: BluetoothDevice | null): any,
   deviceData: DeviceData | null,
   onSetLoading(val: boolean): any,
   dispenser: any
 }> = (props: HomeProps) => {
-  // const [isConnected, setConnected] = useState(props.isConnected)
 
   useEffect(() => {
-    console.log('isConnected: ', props.isConnected)
-    console.log('selectedDevice: ', props.selectedDevice)
+
   })
 
   const connectDevice = () => {
     if (props.selectedDevice) {
-      props.onConnected()
+      props.onConnected(props.selectedDevice)
     } else {
       alert("Please select the device first.")
     }
@@ -61,13 +55,24 @@ const Home: React.FC<{
             <IonTitle size="large">Home</IonTitle>
           </IonToolbar>
         </IonHeader>
-        {/* <ExploreContainer name="Tab 2 page" /> */}
-          { props.isConnected && <IonGrid>
+        { props.isConnected && props.deviceData && props.deviceData.isSync == 1 && <IonGrid>
           <IonRow>
             <IonCol size='5'>
               Device ID
             </IonCol>
             <IonCol size='7'>{props.deviceData ? props.deviceData.id : ""}</IonCol>
+          </IonRow>
+          <IonRow>
+            <IonCol size='5'>
+              Dispenser Serial No.
+            </IonCol>
+            <IonCol size='7'>{props.deviceData ? props.deviceData.dispenserSno : ""}</IonCol>
+          </IonRow>
+          <IonRow>
+            <IonCol size='5'>
+              Canister Serial No.
+            </IonCol>
+            <IonCol size='7'>{props.deviceData ? props.deviceData.canisterSno : ""}</IonCol>
           </IonRow>
           <IonRow>
             <IonCol size='5'>
@@ -77,46 +82,44 @@ const Home: React.FC<{
           </IonRow>
           <IonRow>
             <IonCol size='5'>
-              Start Date
+              Last Dispense
             </IonCol>
-            <IonCol size='7'>{props.deviceData ? moment.unix(props.deviceData.startDate).format("DD/MM/YY, h:mm A") : ""}</IonCol>
+            <IonCol size='7'>{props.deviceData && props.deviceData.lastDispense > 0 ? moment.unix(props.deviceData.lastDispense).format("DD/MM/YY, h:mm A") : ""}</IonCol>
           </IonRow>
           <IonRow>
             <IonCol size='5'>
-              End Date
+              Last Dispense Counter
             </IonCol>
-            <IonCol size='7'>{props.deviceData ? moment.unix(props.deviceData.endDate).format("DD/MM/YY, h:mm A") : ""}</IonCol>
+            <IonCol size='7'>{props.deviceData ? props.deviceData.lastDispenseCounter : ""}</IonCol>
           </IonRow>
           <IonRow>
             <IonCol size='5'>
-              Interval (Seconds)
-            </IonCol>
-            <IonCol size='7'>{props.deviceData ? props.deviceData.interval : ""}</IonCol>
-          </IonRow>
-          <IonRow>
-            <IonCol size='5'>
-              Last Interval
-            </IonCol>
-            <IonCol size='7'>{props.deviceData ? moment.unix(props.deviceData.lastInterval).format("DD/MM/YY, h:mm A") : ""}</IonCol>
-          </IonRow>
-          <IonRow>
-            <IonCol size='5'>
-              Next Interval
-            </IonCol>
-            <IonCol size='7'>{props.deviceData ? props.deviceData.nextInterval <= props.deviceData.endDate ? moment.unix(props.deviceData.nextInterval).format("DD/MM/YY, h:mm A") : "" : ""}</IonCol>
-          </IonRow>
-          <IonRow>
-            <IonCol size='5'>
-              Counter
+              Overall Counter
             </IonCol>
             <IonCol size='7'>{props.deviceData ? props.deviceData.counter : ""}</IonCol>
           </IonRow>
           <IonRow>
             <IonCol size='5'>
-              Counter Status
+              Dispense Limit
+            </IonCol>
+            <IonCol size='7'>{props.dispenser && props.dispenser.latestcanister.length > 0 ? props.dispenser.latestcanister[0].canisterId.initialSprays : ""}</IonCol>
+          </IonRow>
+          <IonRow>
+            <IonCol size='5'>
+              Dispenser Status
             </IonCol>
             <IonCol size='7'>{props.deviceData ? props.deviceData.status == 0 ? "Off" : "On" : ""}</IonCol>
           </IonRow>
+          </IonGrid>
+        }
+        { 
+          props.isConnected && props.deviceData && props.deviceData.isSync == 0 && 
+          <IonGrid>
+            <IonRow>
+              <IonCol className='ion-padding'>
+                <IonLabel>Please sync to activate the device.</IonLabel>
+              </IonCol>
+            </IonRow>
           </IonGrid>
         }
         { 

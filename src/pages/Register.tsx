@@ -23,22 +23,28 @@ import { qrCode } from 'ionicons/icons'
 import { BarcodeFormat, BarcodeScanner} from '@capacitor-mlkit/barcode-scanning'
 import DispenserAPI from '../api/dispenser'
 import CanisterAPI from '../api/canister'
-
+import { BluetoothSerial } from '@awesome-cordova-plugins/bluetooth-serial';
+import moment from 'moment'
 interface RegisterProps {
   selectedDevice: BluetoothDevice | null,
-  dispenser: any,
+  dispenser: any,isConnected: boolean,
+  onSetLoading(val: boolean): any,
+  onSelectDevice: any,
 }
 
 const Register: React.FC<{
   selectedDevice: BluetoothDevice | null,
   dispenser: any,
+  isConnected: boolean,
+  onSetLoading(val: boolean): any,
+  onSelectDevice: any,
 }> = (props: RegisterProps) => {
   const [regType, setRegType] = useState<string | null>(null)
   const [serialNo, setSerialNo] = useState<string | null>(null)
   const [supported, setSupported] = useState<boolean>(false)
 
   const onSelect = (e: any) => {
-    console.log('select: ', e.detail.value)
+    // console.log('select: ', e.detail.value)
     setRegType(e.detail.value)
 
     if (e.detail.value == 'canister') {
@@ -57,7 +63,7 @@ const Register: React.FC<{
   const handleQR = async () => {
     try {
       const { supported} = await BarcodeScanner.isSupported()
-      console.log('qr: ', supported)
+      // console.log('qr: ', supported)
       setSupported(supported)
 
       if (supported) {
@@ -69,7 +75,7 @@ const Register: React.FC<{
         }
 
         const { available} = await BarcodeScanner.isGoogleBarcodeScannerModuleAvailable()
-        console.log({available})
+        // console.log({available})
 
         if (!available) {
           await BarcodeScanner.installGoogleBarcodeScannerModule()
@@ -92,7 +98,7 @@ const Register: React.FC<{
       formats: [BarcodeFormat.QrCode]
     });
 
-    console.log({barcodes})
+    // console.log({barcodes})
 
     if (barcodes.length) {
       setSerialNo(barcodes[0].rawValue)
@@ -102,7 +108,7 @@ const Register: React.FC<{
 
   const requestPermissions = async () => {
     const { camera } = await BarcodeScanner.requestPermissions();
-    console.log({camera})
+    // console.log({camera})
     return camera === 'granted' || camera === 'limited';
   }
 
@@ -133,9 +139,21 @@ const Register: React.FC<{
       if (regType == 'dispenser') {
         await DispenserAPI.registerDispenser(serialNo)
         alert('Succesfully registered dispenser')
+        props.onSetLoading(true)
+        props.onSelectDevice()
         return;
       } else {
-        await CanisterAPI.registerCanister(props.dispenser.dispenserId.id, serialNo)
+        const resp = await CanisterAPI.registerCanister(props.dispenser.dispenserId.id, serialNo)
+
+        if (resp && props.selectedDevice && props.isConnected) {
+          const unixDate = moment().unix()
+          const dispenserSno = props.dispenser.dispenserId.serialNumber ? props.dispenser.dispenserId.serialNumber : ""
+          const dispLimit = props.dispenser.latestcanister.length > 0 ? props.dispenser.latestcanister[0].canisterId.initialSprays : ""
+
+          await BluetoothSerial.write(`SYNC:${unixDate},${dispenserSno},${serialNo},${dispLimit}`)
+          props.onSetLoading(true)
+          // props.onSelectDevice()
+        }
         alert('Succesfully registered canister')
         return
       }
@@ -157,11 +175,6 @@ const Register: React.FC<{
         </IonToolbar>
       </IonHeader>
       <IonContent fullscreen className="ion-padding ion-text-center">
-        {/* <IonHeader collapse="condense">
-          <IonToolbar>
-            <IonTitle size="large">Register</IonTitle>
-          </IonToolbar>
-        </IonHeader> */}
         <IonGrid>
           <IonRow>
             <IonCol>

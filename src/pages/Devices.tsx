@@ -16,7 +16,6 @@ import {
   IonMenuButton, 
 } from '@ionic/react';
 import { checkmark } from 'ionicons/icons';
-import ExploreContainer from '../components/ExploreContainer';
 import './Devices.css';
 
 import { BluetoothSerial } from '@awesome-cordova-plugins/bluetooth-serial'
@@ -34,31 +33,24 @@ const Devices: React.FC<{
   const [isScanning, setIsScanning] = useState(false)
 
   useEffect(() => {
-    // listDevices()
-    // console.log("test: ",props.devices)
-    // console.log('selectedDevice: ', props.selectedDevice)
-
-    setDevices([
-      {
-        class: 1,
-        id: '1',
-        address: 'FF:FF:FF:FF',
-        name: 'Device 1'
-      }
-    ])
+    
   }, [])
+
+  useEffect(() => {
+    if (!props.selectedDevice) {
+      setSelectedDevice(null)
+    }
+  }, [props.selectedDevice])
   const scanDevices = async () => {
     if (!isScanning) {
       setIsScanning(true)
       const list = await BluetoothSerial.list();
-      console.log('list: ', list)
       setDevices(list)
       setIsScanning(false)
     }
   }
 
   const selectDevice = (val: BluetoothDevice) => {
-    console.log('selected: ', val)
     setSelectedDevice(val)
     props.onSelectDevice(val)
   }
@@ -102,10 +94,6 @@ const Devices: React.FC<{
             </IonRow>
           </IonGrid>
         }
-        {/* <ExploreContainer name="List Devices" />
-        <IonButton onClick={listDevices}>List devices</IonButton>
-        <IonButton onClick={connectDevice}>Connect</IonButton>
-        <IonButton onClick={getData}>Get Data</IonButton> */}
       </IonContent>
     </IonPage>
   );
