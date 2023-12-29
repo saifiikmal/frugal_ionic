@@ -21,6 +21,7 @@ import { BluetoothSerial } from '@awesome-cordova-plugins/bluetooth-serial'
 
 import { BluetoothDevice, DeviceProps, DeviceData } from '../types/device'
 import DispenserAPI from '../api/dispenser'
+import CanisterAPI from '../api/canister'
 import Register from '../pages/Register';
 import Schedule from '../pages/Schedule';
 
@@ -44,7 +45,7 @@ const Tabs: React.FC = () => {
   const [networkStatus, setNetworkStatus] = useState<boolean>(false);
 
   useEffect(() => {
-    console.log('componentDidMount');
+    // console.log('componentDidMount');
     const checkPermissions = async () => {
       const permissions = [
         AndroidPermissions.PERMISSION.BLUETOOTH_CONNECT,
@@ -94,7 +95,6 @@ const Tabs: React.FC = () => {
           // console.log("data: ", data)
         } catch (err) {
           console.log({err})
-          console.log("err 1")
           setIsLoading(false)
           setConnected(false)
         }
@@ -109,7 +109,6 @@ const Tabs: React.FC = () => {
             // console.log({btConnected})
           } catch (err) {
             console.log({err})
-            console.log("err 2")
             setIsLoading(false)
             setConnected(false)
           }
@@ -130,7 +129,6 @@ const Tabs: React.FC = () => {
 
   useEffect(() => {
     if (dispenser && selectedDevice && !isConnected) {
-      console.log("onConnected onselectdevice")
       onConnected(selectedDevice)
     }
   }, [dispenser])
@@ -175,41 +173,19 @@ const Tabs: React.FC = () => {
   }
 
   const onSelectDevice = async (device: BluetoothDevice) => {
-    console.log('parent select device: ', device)
     setSelectedDevice(device)
-
-    // if (device) {
-    //   try {
-    //     const resp = await DispenserAPI.getDispenserByMacAddress(device.address)
-      
-    //     console.log(resp.data)
-
-    //     setDispenser(resp.data)
-
-    //     if (!isConnected) {
-    //       console.log("onConnected onselectdevice")
-    //       onConnected(device)
-    //     }
-
-    //   } catch (err) {
-    //     // alert('Unregistered device. Please make sure you have registered the device.')
-    //     setIsLoading(false)
-    //     setConnected(false)
-    //   }
-    // }
   }
 
   const onConnected = async (device: any) => {
     // disconnect
     // setIsLoading(true)
-    console.log({device})
+    // console.log({device})
     try {
       if (device) {
         setIsLoading(true)
 
         if (isConnected) {
           const dc =  await BluetoothSerial.disconnect()
-          console.log('dc: ', dc)
   
           if (dc) {
             setConnected(false)
@@ -218,11 +194,9 @@ const Tabs: React.FC = () => {
         } else {
           const bt = await BluetoothSerial.connect(device.address)
           
-          console.log("connect")
           bt.subscribe(
             {
               error: (e) => {
-                console.log("error1 :", e)
                 setIsLoading(false)
                 setConnected(false)
                 setSelectedDevice(null)
@@ -231,7 +205,6 @@ const Tabs: React.FC = () => {
               },
               next: async () => {
                 const isConn = await BluetoothSerial.isConnected()
-                console.log('connected: ', isConn)
   
                 if (isConn) {
                   setConnected(true)
@@ -241,14 +214,11 @@ const Tabs: React.FC = () => {
                   BluetoothSerial.subscribe("\n").subscribe(
                     {
                       error: (e) => {
-                        console.log("error2 :", e)
-                        // throw Error(e)
                         setIsLoading(false)
                         setConnected(false)
                         alert("Something wrong. Please try again")
                       },
                       next: async (value) => {
-                        // console.log("next: ", value)
                         if (value.startsWith("SET:")) {
                           onUpdateData()
                         }
@@ -267,7 +237,7 @@ const Tabs: React.FC = () => {
 
                         if (value.startsWith("GET:")) {
                           setIsLoading(false)
-                          console.log("GET data: ", value.substring(4))
+                          // console.log("GET data: ", value.substring(4))
                           let newValue = value.substring(4)
     
                           const [
@@ -284,7 +254,7 @@ const Tabs: React.FC = () => {
                             status,
                             isSync,
                           ] = newValue.replace(/(\r\n|\n|\r)/gm, "").split(",")
-                          console.log("id: ",id)
+
                           setDeviceData({
                             id,
                             dispenserSno,
@@ -299,23 +269,29 @@ const Tabs: React.FC = () => {
                             status,
                             isSync,
                           })
-                          console.log({isSync, dispenser})
-                          if (Number(isSync) == 0 && dispenser) {
-                            const unixDate = moment().unix()
-                            const canisterSno = dispenser.latestcanister.length > 0 ? dispenser.latestcanister[0].canisterId.serialNumber : ""
-                            const dispenserSno = dispenser.dispenserId.serialNumber ? dispenser.dispenserId.serialNumber : ""
+
+                          if (dispenser) {
                             const dispLimit = dispenser.latestcanister.length > 0 ? dispenser.latestcanister[0].canisterId.initialSprays : ""
 
-                            // console.log({dispLimit})
+                            if (Number(isSync) == 0) {
+                              const unixDate = moment().unix()
+                              const canisterSno = dispenser.latestcanister.length > 0 ? dispenser.latestcanister[0].canisterId.serialNumber : ""
+                              const dispenserSno = dispenser.dispenserId.serialNumber ? dispenser.dispenserId.serialNumber : ""
 
-                            await BluetoothSerial.write(`SYNC:${unixDate},${dispenserSno},${canisterSno},${dispLimit}`)
+                              // console.log({dispLimit})
+
+                              await BluetoothSerial.write(`SYNC:${unixDate},${dispenserSno},${canisterSno},${dispLimit}`)
+                            } else {
+                              if (dispenser.latestcanister.length > 0) {
+                                await CanisterAPI.updateCanister(dispenser.latestcanister[0].canisterId.id, {
+                                  remainingSprays: dispLimit - counter
+                                })
+                              }
+                            }
                           }
                         }
                       },
-                      // complete: ()  => {
-                      //   console.log("complete: ")
-                      //   setIsLoading(false)
-                      // }
+                      
                     }
                   )
                 } else {
@@ -324,99 +300,6 @@ const Tabs: React.FC = () => {
               }
             }
           )
-              // async (value) => {
-              //   console.log('val: ', value)
-              //   const isConn = await BluetoothSerial.isConnected()
-              //   console.log('connected: ', isConn)
-  
-              //   if (isConn) {
-              //     setConnected(true)
-  
-              //     await BluetoothSerial.write("GET")
-              //     // await BluetoothSerial.write("CLOCK")
-  
-              //     BluetoothSerial.subscribe("\n").subscribe(
-              //       {
-              //         next: (v) => console.log(v),
-              //         error: (e) => console.error(e),
-              //         complete: () => console.info('complete') 
-              //     }
-              //       // async (value) => {
-              //       //   if (value.startsWith("SET:")) {
-              //       //     onUpdateData()
-              //       //   }
-              //       //   if (value.startsWith("SYNC:")) {
-              //       //     onUpdateData()
-              //       //   }
-              //       //   if (value.startsWith("TIMER:")) {
-              //       //     onUpdateData()
-              //       //   }
-              //       //   if (value.startsWith("CLEAR:")) {
-              //       //     onUpdateData()
-              //       //   }
-              //       //   if (value.startsWith("CLOCK:")) {
-              //       //     console.log("CLOCK data: ", value.substring(6))
-              //       //   }
-              //       //   if (value.startsWith("GET:")) {
-              //       //     setIsLoading(false)
-              //       //     console.log("GET data: ", value.substring(4))
-              //       //     let newValue = value.substring(4)
-  
-              //       //     const [
-              //       //       id,
-              //       //       dispenserSno,
-              //       //       canisterSno,
-              //       //       currentTime,
-              //       //       sprayPressDuration,
-              //       //       pauseBetweenSpray,
-              //       //       lastDispense,
-              //       //       lastDispenseCounter,
-              //       //       counter,
-              //       //       status,
-              //       //       isSync,
-              //       //     ] = newValue.split(",")
-              //       //     console.log("id: ",id)
-              //       //     setDeviceData({
-              //       //       id,
-              //       //       dispenserSno,
-              //       //       canisterSno,
-              //       //       currentTime,
-              //       //       sprayPressDuration,
-              //       //       pauseBetweenSpray,
-              //       //       lastDispense,
-              //       //       lastDispenseCounter,
-              //       //       counter,
-              //       //       status,
-              //       //       isSync,
-              //       //     })
-  
-              //       //     if (isSync == 0 && dispenser) {
-              //       //       const unixDate = moment().unix()
-              //       //       const canisterSno = dispenser.latestcanister.length > 0 ? dispenser.latestcanister[0].canisterId.serialNumber : ""
-              //       //       const dispenserSno = dispenser.dispenserId.serialNumber ? dispenser.dispenserId.serialNumber : ""
-  
-              //       //       await BluetoothSerial.write(`SYNC:${unixDate},${dispenserSno},${canisterSno}`)
-              //       //     }
-              //       //   }
-              //       // },
-              //       // (error) => {
-              //       //   console.error('Subscription error:', error);
-              //       //   setConnected(false)
-              //       //   setIsLoading(false)
-              //       //   alert("Something wrong. Please try again")
-              //       // }
-              //     )
-              //   } else {
-              //     setConnected(false)
-              //     setIsLoading(false)
-              //   }
-              // },
-              // (error) => {
-              //   console.error('connect error:', error);
-              //   setConnected(false)
-              //   setIsLoading(false)
-              //   alert("Something wrong. Please try again")
-              // }
         }
       }
     } 
