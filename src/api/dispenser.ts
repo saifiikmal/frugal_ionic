@@ -18,6 +18,10 @@ const registerDispenser = (serialNumber: any) => {
   })
 }
 
+const updateDispenser = (id: any, data: any) => {
+  return api.put(`/frugal/dispensers/id/653dad8613e455caf72388c2/${id}`, {...data})
+}
+
 const updateDispenserTime = (id: any, data: any) => {
   return api.put(`/frugal/dispensertimes/id/653dad8613e455caf72388c2/${id}`, {...data})
 }
@@ -35,6 +39,7 @@ export default {
   getDispenserWithCanister,
   getDispenserByMacAddress,
   registerDispenser,
+  updateDispenser,
   updateDispenserTime,
   createDispenserTime,
   deleteDispenserTime,

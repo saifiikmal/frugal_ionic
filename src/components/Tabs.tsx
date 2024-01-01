@@ -260,6 +260,12 @@ const Tabs: React.FC = () => {
                   setDeviceData(dd)
 
                   await syncDevice(dd)
+                  
+                  if (dispenser) {
+                    DispenserAPI.updateDispenser(dispenser.dispenserId.id, {
+                      lastSprayDate: moment.unix(dd.lastDispense).utc().format("YYYY-MM-DDTHH:mm:ss.SSS[Z]")
+                    })
+                  }
               }
             }
           );

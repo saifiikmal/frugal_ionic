@@ -296,7 +296,7 @@ const Schedule: React.FC<{
         <IonRefresher slot="fixed" onIonRefresh={handleRefresh}>
           <IonRefresherContent></IonRefresherContent>
         </IonRefresher>
-        { props.selectedDevice && props.dispenser && 
+        { props.isConnected && props.selectedDevice && props.dispenser && 
         <>
         <IonList>
           { props.dispenser.dispensertimes.map((times: any) => {
@@ -485,6 +485,16 @@ const Schedule: React.FC<{
           <IonRow>
             <IonCol>
               <IonLabel>Please select the device first.</IonLabel>
+            </IonCol>
+          </IonRow>
+        </IonGrid>
+      }
+      { 
+        !props.isConnected  && 
+        <IonGrid>
+          <IonRow>
+            <IonCol>
+              <IonLabel>Please connect the device first.</IonLabel>
             </IonCol>
           </IonRow>
         </IonGrid>
