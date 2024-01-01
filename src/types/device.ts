@@ -1,5 +1,5 @@
 export interface BluetoothDevice {
-  class: number;
+  // class: number;
   id: string;
   address: string;
   name: string;
@@ -25,3 +25,6 @@ export interface DeviceData {
   status: number,
   isSync: number,
 }
+
+export const FRUGAL_SERVICE = "4fafc201-1fb5-459e-8fcc-c5c9c331914b"
+export const FRUGAL_CHARACTERISTIC = "beb5483e-36e1-4688-b7f5-ea07361b26a8"

@@ -17,9 +17,10 @@ import Home from '../pages/Home';
 import Settings from '../pages/Settings';
 
 import { AndroidPermissions } from '@awesome-cordova-plugins/android-permissions'
-import { BluetoothSerial } from '@awesome-cordova-plugins/bluetooth-serial'
+// import { BluetoothSerial } from '@awesome-cordova-plugins/bluetooth-serial'
+import { BleClient, dataViewToText, textToDataView } from '@capacitor-community/bluetooth-le';
 
-import { BluetoothDevice, DeviceProps, DeviceData } from '../types/device'
+import { BluetoothDevice, DeviceProps, DeviceData, FRUGAL_SERVICE, FRUGAL_CHARACTERISTIC } from '../types/device'
 import DispenserAPI from '../api/dispenser'
 import CanisterAPI from '../api/canister'
 import Register from '../pages/Register';
@@ -80,7 +81,7 @@ const Tabs: React.FC = () => {
 
     checkPermissions()
     setupNetworkListener()
-    listDevices()
+    // listDevices()
 
   }, [])
   
@@ -90,7 +91,10 @@ const Tabs: React.FC = () => {
       const interval = setInterval(async () => {
         // console.log('interval')
         try {
-          await BluetoothSerial.write("GET")
+          // await BluetoothSerial.write("GET")
+          if (selectedDevice) {
+            await BleClient.write(selectedDevice.address, FRUGAL_SERVICE, FRUGAL_CHARACTERISTIC, textToDataView("GET#"))
+          }
           // await BluetoothSerial.write("CLOCK")
           // console.log("data: ", data)
         } catch (err) {
@@ -100,24 +104,24 @@ const Tabs: React.FC = () => {
         }
       }, 15000)
 
-      const interval2 = setInterval(async () => {
-        // Update the count state every second
-        // console.log({isConnected})
-          // console.log({isConnected})
-          try {
-            const btConnected = await BluetoothSerial.isConnected()
-            // console.log({btConnected})
-          } catch (err) {
-            console.log({err})
-            setIsLoading(false)
-            setConnected(false)
-          }
-      }, 1000);
+      // const interval2 = setInterval(async () => {
+      //   // Update the count state every second
+      //   // console.log({isConnected})
+      //     // console.log({isConnected})
+      //     try {
+      //       // const btConnected = await BluetoothSerial.isConnected()
+      //       // console.log({btConnected})
+      //     } catch (err) {
+      //       console.log({err})
+      //       setIsLoading(false)
+      //       setConnected(false)
+      //     }
+      // }, 1000);
   
       // Clear the interval when the component unmounts
       return () => {
         clearInterval(interval)
-        clearInterval(interval2)
+        // clearInterval(interval2)
       }
     }
   }, [isConnected])
@@ -156,165 +160,308 @@ const Tabs: React.FC = () => {
     }
   }
 
-  const listDevices = async () => {
-    const list = await BluetoothSerial.list();
-    // console.log('list: ', list)
-    setDevices(list)
-    // console.log('devices: ', devices, list.length)
+  // const listDevices = async () => {
+  //   const list = await BluetoothSerial.list();
+  //   // console.log('list: ', list)
+  //   setDevices(list)
+  //   // console.log('devices: ', devices, list.length)
     
 
-    BluetoothSerial.setDeviceDiscoveredListener().subscribe(
-      (value) => {
-        // console.log('devices: ', value)
-      }
-    )
+  //   BluetoothSerial.setDeviceDiscoveredListener().subscribe(
+  //     (value) => {
+  //       // console.log('devices: ', value)
+  //     }
+  //   )
 
-    BluetoothSerial.discoverUnpaired()
-  }
+  //   BluetoothSerial.discoverUnpaired()
+  // }
 
   const onSelectDevice = async (device: BluetoothDevice) => {
     setSelectedDevice(device)
   }
 
   const onConnected = async (device: any) => {
-    // disconnect
-    // setIsLoading(true)
-    // console.log({device})
+
     try {
       if (device) {
         setIsLoading(true)
 
         if (isConnected) {
-          const dc =  await BluetoothSerial.disconnect()
-  
-          if (dc) {
-            setConnected(false)
-            setIsLoading(false)
-          }
+          await BleClient.disconnect(device.address);
+          console.log('disconnected from device', device);
+          setIsLoading(false)
+          setConnected(false)
         } else {
-          const bt = await BluetoothSerial.connect(device.address)
-          
-          bt.subscribe(
-            {
-              error: (e) => {
-                setIsLoading(false)
-                setConnected(false)
-                setSelectedDevice(null)
-                setDispenser(null)
-                alert("Please reconnect again")
-              },
-              next: async () => {
-                const isConn = await BluetoothSerial.isConnected()
-  
-                if (isConn) {
-                  setConnected(true)
-  
-                  await BluetoothSerial.write("GET")
+          await BleClient.connect(device.address, (deviceId) => {
+            // console.log('onDisconnected: ', deviceId)
+            setIsLoading(false)
+            setConnected(false)
+          });
+          console.log('connected to device', device);
 
-                  BluetoothSerial.subscribe("\n").subscribe(
-                    {
-                      error: (e) => {
-                        setIsLoading(false)
-                        setConnected(false)
-                        alert("Something wrong. Please try again")
-                      },
-                      next: async (value) => {
-                        if (value.startsWith("SET:")) {
-                          onUpdateData()
-                        }
-                        if (value.startsWith("SYNC:")) {
-                          onUpdateData()
-                        }
-                        if (value.startsWith("TIMER:")) {
-                          onUpdateData()
-                        }
-                        if (value.startsWith("CLEAR:")) {
-                          onUpdateData()
-                        }
-                        if (value.startsWith("CLOCK:")) {
-                          console.log("CLOCK data: ", value.substring(6))
-                        }
+          setIsLoading(false)
+          setConnected(true)
 
-                        if (value.startsWith("GET:")) {
-                          setIsLoading(false)
-                          // console.log("GET data: ", value.substring(4))
-                          let newValue = value.substring(4)
-    
-                          const [
-                            id,
-                            dispenserSno,
-                            canisterSno,
-                            currentTime,
-                            sprayPressDuration,
-                            pauseBetweenSpray,
-                            lastDispense,
-                            lastDispenseCounter,
-                            counter,
-                            dispenseLimit,
-                            status,
-                            isSync,
-                          ] = newValue.replace(/(\r\n|\n|\r)/gm, "").split(",")
 
-                          setDeviceData({
-                            id,
-                            dispenserSno,
-                            canisterSno,
-                            currentTime,
-                            sprayPressDuration,
-                            pauseBetweenSpray,
-                            lastDispense,
-                            lastDispenseCounter,
-                            counter,
-                            dispenseLimit,
-                            status,
-                            isSync,
-                          })
+          await BleClient.startNotifications(
+            device.address,
+            FRUGAL_SERVICE,
+            FRUGAL_CHARACTERISTIC,
+            async (value) => {
+              console.log("value: " + dataViewToText(value))
+              let data = dataViewToText(value)
 
-                          if (dispenser) {
-                            const dispLimit = dispenser.latestcanister.length > 0 ? dispenser.latestcanister[0].canisterId.initialSprays : ""
+              if (data.startsWith("SET:")) {
+                onUpdateData()
+              }
+              if (data.startsWith("SYNC:")) {
+                onUpdateData()
+              }
+              if (data.startsWith("TIMER:")) {
+                onUpdateData()
+              }
+              if (data.startsWith("CLEAR:")) {
+                onUpdateData()
+              }
+              if (data.startsWith("CLOCK:")) {
+                console.log("CLOCK data: ", data)
+              }
+              if (data.startsWith("GET:")) {
+                  let newValue = data.substring(4)
+                  const [
+                    id,
+                    dispenserSno,
+                    canisterSno,
+                    currentTime,
+                    sprayPressDuration,
+                    pauseBetweenSpray,
+                    lastDispense,
+                    lastDispenseCounter,
+                    counter,
+                    dispenseLimit,
+                    status,
+                    isSync,
+                  ] = newValue.replace(/(\r\n|\n|\r)/gm, "").split(",")
 
-                            if (Number(isSync) == 0) {
-                              const unixDate = moment().unix()
-                              const canisterSno = dispenser.latestcanister.length > 0 ? dispenser.latestcanister[0].canisterId.serialNumber : ""
-                              const dispenserSno = dispenser.dispenserId.serialNumber ? dispenser.dispenserId.serialNumber : ""
+                  const dd = {
+                    id,
+                    dispenserSno,
+                    canisterSno,
+                    currentTime: Number(currentTime),
+                    sprayPressDuration: Number(sprayPressDuration),
+                    pauseBetweenSpray: Number(pauseBetweenSpray),
+                    lastDispense: Number(lastDispense),
+                    lastDispenseCounter: Number(lastDispenseCounter),
+                    counter: Number(counter),
+                    dispenseLimit: Number(dispenseLimit),
+                    status: Number(status),
+                    isSync: Number(isSync),
+                  }
+                  setDeviceData(dd)
 
-                              // console.log({dispLimit})
-
-                              await BluetoothSerial.write(`SYNC:${unixDate},${dispenserSno},${canisterSno},${dispLimit}`)
-                            } else {
-                              if (dispenser.latestcanister.length > 0) {
-                                await CanisterAPI.updateCanister(dispenser.latestcanister[0].canisterId.id, {
-                                  remainingSprays: dispLimit - counter
-                                })
-                              }
-                            }
-                          }
-                        }
-                      },
-                      
-                    }
-                  )
-                } else {
-                  
-                }
+                  await syncDevice(dd)
               }
             }
-          )
+          );
+          // await syncDevice()
+          await BleClient.write(device.address, FRUGAL_SERVICE, FRUGAL_CHARACTERISTIC, textToDataView("GET#"))
+
+          // const result = await BleClient.read(device.address, FRUGAL_SERVICE, FRUGAL_CHARACTERISTIC)
+          // console.log("result: ", dataViewToText(result))
+
         }
+      } else {
+
       }
-    } 
-    catch (err) {
-      // console.log({err})
+      
+    } catch (err) {
+      console.error(err)
       alert(err)
       setIsLoading(false)
       setConnected(false)
     }
+    // disconnect
+    // setIsLoading(true)
+    // console.log({device})
+    // try {
+    //   if (device) {
+    //     setIsLoading(true)
+
+    //     if (isConnected) {
+    //       const dc =  await BluetoothSerial.disconnect()
+  
+    //       if (dc) {
+    //         setConnected(false)
+    //         setIsLoading(false)
+    //       }
+    //     } else {
+    //       const bt = await BluetoothSerial.connect(device.address)
+          
+    //       bt.subscribe(
+    //         {
+    //           error: (e) => {
+    //             setIsLoading(false)
+    //             setConnected(false)
+    //             setSelectedDevice(null)
+    //             setDispenser(null)
+    //             alert("Please reconnect again")
+    //           },
+    //           next: async () => {
+    //             const isConn = await BluetoothSerial.isConnected()
+  
+    //             if (isConn) {
+    //               setConnected(true)
+  
+    //               await BluetoothSerial.write("GET")
+
+    //               BluetoothSerial.subscribe("\n").subscribe(
+    //                 {
+    //                   error: (e) => {
+    //                     setIsLoading(false)
+    //                     setConnected(false)
+    //                     alert("Something wrong. Please try again")
+    //                   },
+    //                   next: async (value) => {
+    //                     if (value.startsWith("SET:")) {
+    //                       onUpdateData()
+    //                     }
+    //                     if (value.startsWith("SYNC:")) {
+    //                       onUpdateData()
+    //                     }
+    //                     if (value.startsWith("TIMER:")) {
+    //                       onUpdateData()
+    //                     }
+    //                     if (value.startsWith("CLEAR:")) {
+    //                       onUpdateData()
+    //                     }
+    //                     if (value.startsWith("CLOCK:")) {
+    //                       console.log("CLOCK data: ", value.substring(6))
+    //                     }
+
+    //                     if (value.startsWith("GET:")) {
+    //                       setIsLoading(false)
+    //                       // console.log("GET data: ", value.substring(4))
+    //                       let newValue = value.substring(4)
+    
+    //                       const [
+    //                         id,
+    //                         dispenserSno,
+    //                         canisterSno,
+    //                         currentTime,
+    //                         sprayPressDuration,
+    //                         pauseBetweenSpray,
+    //                         lastDispense,
+    //                         lastDispenseCounter,
+    //                         counter,
+    //                         dispenseLimit,
+    //                         status,
+    //                         isSync,
+    //                       ] = newValue.replace(/(\r\n|\n|\r)/gm, "").split(",")
+
+    //                       setDeviceData({
+    //                         id,
+    //                         dispenserSno,
+    //                         canisterSno,
+    //                         currentTime,
+    //                         sprayPressDuration,
+    //                         pauseBetweenSpray,
+    //                         lastDispense,
+    //                         lastDispenseCounter,
+    //                         counter,
+    //                         dispenseLimit,
+    //                         status,
+    //                         isSync,
+    //                       })
+
+    //                       if (dispenser) {
+    //                         const dispLimit = dispenser.latestcanister.length > 0 ? dispenser.latestcanister[0].canisterId.initialSprays : ""
+
+    //                         if (Number(isSync) == 0) {
+    //                           const unixDate = moment().unix()
+    //                           const canisterSno = dispenser.latestcanister.length > 0 ? dispenser.latestcanister[0].canisterId.serialNumber : ""
+    //                           const dispenserSno = dispenser.dispenserId.serialNumber ? dispenser.dispenserId.serialNumber : ""
+
+    //                           // console.log({dispLimit})
+
+    //                           await BluetoothSerial.write(`SYNC:${unixDate},${dispenserSno},${canisterSno},${dispLimit}`)
+    //                         } else {
+    //                           if (dispenser.latestcanister.length > 0) {
+    //                             await CanisterAPI.updateCanister(dispenser.latestcanister[0].canisterId.id, {
+    //                               remainingSprays: dispLimit - counter
+    //                             })
+    //                           }
+    //                         }
+    //                       }
+    //                     }
+    //                   },
+                      
+    //                 }
+    //               )
+    //             } else {
+                  
+    //             }
+    //           }
+    //         }
+    //       )
+    //     }
+    //   }
+    // } 
+    // catch (err) {
+    //   // console.log({err})
+    //   alert(err)
+    //   setIsLoading(false)
+    //   setConnected(false)
+    // }
   }
 
   const onUpdateData = async () => {
     console.log("update data")
-    await BluetoothSerial.write("GET")
+    // await BluetoothSerial.write("GET")
+    if (selectedDevice) {
+      await BleClient.write(selectedDevice.address, FRUGAL_SERVICE, FRUGAL_CHARACTERISTIC, textToDataView("GET#"))
+    }
     setIsLoading(false)
+  }
+
+  const syncDevice = async (devData: any) => {
+    if (dispenser && devData && selectedDevice) {
+      const dispLimit = dispenser.latestcanister.length > 0 ? dispenser.latestcanister[0].canisterId.initialSprays : ""
+
+      const currentDate = moment().format("YYYY-MM-DD HH:mm:ss")
+      const canisterSno = dispenser.latestcanister.length > 0 ? dispenser.latestcanister[0].canisterId.serialNumber : ""
+      const dispenserSno = dispenser.dispenserId.serialNumber ? dispenser.dispenserId.serialNumber : ""
+
+      console.log({
+        isSync: Number(devData.isSync),
+        canisterSno,
+        dispenserSno
+      })
+      if (canisterSno != "" && dispenserSno != "") {
+        // console.log({dispLimit})
+
+        const jsonData = {
+          time: currentDate,
+          dispenser: dispenserSno,
+          canister: canisterSno,
+          dispense_limit: dispLimit
+        }
+
+        const syncData = `SYNC:${JSON.stringify(jsonData)}#`
+        await BleClient.write(selectedDevice.address, FRUGAL_SERVICE, FRUGAL_CHARACTERISTIC, textToDataView(syncData))
+        // await BluetoothSerial.write(`SYNC:${unixDate},${dispenserSno},${canisterSno},${dispLimit}`)
+      }
+
+      if (Number(devData.isSync) == 0) {
+        
+        
+      } else {
+        if (dispenser.latestcanister.length > 0) {
+          await CanisterAPI.updateCanister(dispenser.latestcanister[0].canisterId.id, {
+            remainingSprays: dispLimit - Number(devData.counter)
+          })
+        }
+      }
+    }
   }
 
   // const handleLoading = async (val: boolean) => {

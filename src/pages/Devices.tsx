@@ -13,12 +13,15 @@ import {
   IonGrid,
   IonRow,
   IonCol,
-  IonMenuButton, 
+  IonMenuButton,
+  IonNote,
+  IonLoading, 
 } from '@ionic/react';
 import { checkmark } from 'ionicons/icons';
 import './Devices.css';
 
-import { BluetoothSerial } from '@awesome-cordova-plugins/bluetooth-serial'
+// import { BluetoothSerial } from '@awesome-cordova-plugins/bluetooth-serial'
+import { BleClient } from '@capacitor-community/bluetooth-le';
 import { useEffect, useState } from 'react';
 
 import { BluetoothDevice, DeviceProps } from '../types/device'
@@ -41,12 +44,47 @@ const Devices: React.FC<{
       setSelectedDevice(null)
     }
   }, [props.selectedDevice])
+
   const scanDevices = async () => {
     if (!isScanning) {
-      setIsScanning(true)
-      const list = await BluetoothSerial.list();
-      setDevices(list)
-      setIsScanning(false)
+      // setIsScanning(true)
+      // const list = await BluetoothSerial.list();
+      // setDevices(list)
+      // setIsScanning(false)
+      try {
+        await BleClient.initialize();
+
+        // const device = await BleClient.requestDevice({
+        //   services: ["4fafc201-1fb5-459e-8fcc-c5c9c331914b"],
+        // });
+
+        // console.log("ble device: ", device)
+        setIsScanning(true)
+        const list: BluetoothDevice[] = []
+
+        await BleClient.requestLEScan(
+          {
+            // services: ["4fafc201-1fb5-459e-8fcc-c5c9c331914b"],
+            name: 'Frugal'
+          },
+          (result) => {
+            console.log('received new scan result', result);
+            list.push({
+              id: result.device.deviceId,
+              address: result.device.deviceId,
+              name: result.localName ? result.localName : "Unknown"
+            })
+          }
+        );
+        setTimeout(async () => {
+          await BleClient.stopLEScan();
+          console.log('stopped scanning');
+          setDevices(list)
+          setIsScanning(false)
+        }, 5000);
+      } catch (err) {
+        console.error(err)
+      }
     }
   }
 
@@ -56,6 +94,7 @@ const Devices: React.FC<{
   }
   return (
     <IonPage>
+      <IonLoading isOpen={isScanning} />
       <IonHeader>
         <IonToolbar>
           <IonTitle>Devices</IonTitle>
@@ -79,7 +118,9 @@ const Devices: React.FC<{
           <IonList inset={true}>
             {devices.map(device => 
               <IonItem key={device.id} onClick={() => selectDevice(device)}>
-                <IonLabel>{device.name}</IonLabel>
+                <IonLabel>{device.name}<br />
+                <IonNote style={{ marginTop: 5}}>{device.address}</IonNote>
+                </IonLabel>
                 {selectedDevice != null && device.id === selectedDevice.id && <IonIcon slot='end' icon={checkmark} color={'success'}/>}
               </IonItem>
             )}

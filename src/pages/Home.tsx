@@ -78,13 +78,13 @@ const Home: React.FC<{
             <IonCol size='5'>
               Device Clock
             </IonCol>
-            <IonCol size='7'>{props.deviceData ? moment.unix(props.deviceData.currentTime).format("DD/MM/YY, h:mm A") : ""}</IonCol>
+            <IonCol size='7'>{props.deviceData ? moment.unix(props.deviceData.currentTime).utc().format("DD/MM/YY, h:mm A") : ""}</IonCol>
           </IonRow>
           <IonRow>
             <IonCol size='5'>
               Last Dispense
             </IonCol>
-            <IonCol size='7'>{props.deviceData && props.deviceData.lastDispense > 0 ? moment.unix(props.deviceData.lastDispense).format("DD/MM/YY, h:mm A") : ""}</IonCol>
+            <IonCol size='7'>{props.deviceData && props.deviceData.lastDispense > 0 ? moment.unix(props.deviceData.lastDispense).utc().format("DD/MM/YY, h:mm A") : ""}</IonCol>
           </IonRow>
           <IonRow>
             <IonCol size='5'>

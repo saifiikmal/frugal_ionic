@@ -15,6 +15,7 @@
     "@awesome-cordova-plugins/android-permissions": "^6.4.0",
     "@awesome-cordova-plugins/bluetooth-serial": "^6.4.0",
     "@awesome-cordova-plugins/core": "^6.4.0",
+    "@capacitor-community/bluetooth-le": "^3.1.1",
     "@capacitor-mlkit/barcode-scanning": "^5.3.0",
     "@capacitor/android": "5.4.2",
     "@capacitor/app": "5.0.6",

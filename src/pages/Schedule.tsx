@@ -34,7 +34,7 @@ import {
   IonCheckbox,
   IonLoading
 } from '@ionic/react'
-import { BluetoothDevice, DeviceData } from '../types/device';
+import { BluetoothDevice, DeviceData, FRUGAL_SERVICE, FRUGAL_CHARACTERISTIC } from '../types/device';
 import { qrCode, trash, pencil, add } from 'ionicons/icons'
 import { BarcodeFormat, BarcodeScanner} from '@capacitor-mlkit/barcode-scanning'
 import moment from 'moment'
@@ -42,7 +42,8 @@ import DispenserAPI from '../api/dispenser'
 import CanisterAPI from '../api/canister'
 import './Schedule.css'
 import { OverlayEventDetail } from '@ionic/react/dist/types/components/react-component-lib/interfaces';
-import { BluetoothSerial } from '@awesome-cordova-plugins/bluetooth-serial';
+// import { BluetoothSerial } from '@awesome-cordova-plugins/bluetooth-serial';
+import { BleClient, dataViewToText, textToDataView } from '@capacitor-community/bluetooth-le';
 
 interface ScheduleProps {
   isConnected: boolean,
@@ -98,8 +99,11 @@ const Schedule: React.FC<{
     }
   }
 
-  function handleRefresh(event: CustomEvent<RefresherEventDetail> | null) {
+  async function handleRefresh(event: CustomEvent<RefresherEventDetail> | null) {
     event == null ? setLoading(true) : null
+
+    // if (props.isConnected) await syncTimer()
+
     setTimeout(() => {
       // Any calls to load data go here
       props.onSelectDevice()
@@ -110,6 +114,12 @@ const Schedule: React.FC<{
   const submitTime = async (action: string | null) => {
     try {
       if (dispenserTime) {
+        console.log({dispenserTime})
+
+        if (dispenserTime.dispenseAmount == null || dispenserTime.dispenseAmount <= 0) {
+          alert("Amount must be more than zero");
+          return;
+        }
         if (action == 'edit') {
           const resp = await DispenserAPI.updateDispenserTime(dispenserTime.id, dispenserTime)
 
@@ -156,11 +166,12 @@ const Schedule: React.FC<{
   }
 
   const onChange = (field: string, val: any) => {
-    // console.log('select: ', val)
+    console.log('select: ', field, val)
     const newTime = {
       ...dispenserTime,
       [field]: val
     }
+    console.log({newTime})
     setDispenserTime(newTime)
     // console.log({newTime})
   }
@@ -168,23 +179,96 @@ const Schedule: React.FC<{
   const syncTimer = async () => {
 
     if (props.selectedDevice && props.isConnected) {
-      let timers = []
-      for (let val of props.dispenser.dispensertimes) {
-        const vType = val.timerType == 'weekly' ? 'W' : 'D'
-        const vTime = val.timerTime
-        const vAmount = String(val.dispenseAmount).padStart(3, '0')
-        const sunday = val.sunday ? 1 : 0
-        const monday = val.monday ? 1 : 0
-        const tuesday = val.tuesday ? 1 : 0
-        const wednesday = val.wednesday ? 1 : 0
-        const thursday = val.thursday ? 1 : 0
-        const friday = val.friday ? 1 : 0
-        const saturday = val.saturday ? 1 : 0
+      // let timers = []
 
-        timers.push(`${vType},${vTime},${vAmount},${sunday},${monday},${tuesday},${wednesday},${thursday},${friday},${saturday}`)
+      let timerJson: any = []
+      for(let i = 0; i < 7; i++) {
+        timerJson[i] = []
       }
-      if (timers.length > 0) {
-        await BluetoothSerial.write(`TIMER:${timers.join('|')}`)
+
+      console.log("dispensetimer: ", props.dispenser.dispensertimes)
+      for (let val of props.dispenser.dispensertimes) {
+        if (val.timerType == 'daily') {
+          for(let i = 0; i < 7; i++) {
+            timerJson[i].push({
+              time: val.timerTime,
+              dispense: val.dispenseAmount
+            })
+          }
+        } else {
+          if (val.sunday) {
+            timerJson[0].push({
+              time: val.timerTime,
+              dispense: val.dispenseAmount
+            })
+          }
+          if (val.monday) {
+            timerJson[1].push({
+              time: val.timerTime,
+              dispense: val.dispenseAmount
+            })
+          }
+          if (val.tuesday) {
+            timerJson[2].push({
+              time: val.timerTime,
+              dispense: val.dispenseAmount
+            })
+          }
+          if (val.wednesday) {
+            timerJson[3].push({
+              time: val.timerTime,
+              dispense: val.dispenseAmount
+            })
+          }
+          if (val.thursday) {
+            timerJson[4].push({
+              time: val.timerTime,
+              dispense: val.dispenseAmount
+            })
+          }
+          if (val.friday) {
+            timerJson[5].push({
+              time: val.timerTime,
+              dispense: val.dispenseAmount
+            })
+          }
+          if (val.saturday) {
+            timerJson[6].push({
+              time: val.timerTime,
+              dispense: val.dispenseAmount
+            })
+          }
+        }
+        // const vType = val.timerType == 'weekly' ? 'W' : 'D'
+        // const vTime = val.timerTime
+        // const vAmount = String(val.dispenseAmount).padStart(3, '0')
+        // const sunday = val.sunday ? 1 : 0
+        // const monday = val.monday ? 1 : 0
+        // const tuesday = val.tuesday ? 1 : 0
+        // const wednesday = val.wednesday ? 1 : 0
+        // const thursday = val.thursday ? 1 : 0
+        // const friday = val.friday ? 1 : 0
+        // const saturday = val.saturday ? 1 : 0
+
+        // timers.push(`${vType},${vTime},${vAmount},${sunday},${monday},${tuesday},${wednesday},${thursday},${friday},${saturday}`)
+      }
+      let jsonData = {
+        time: moment().format("YYYY-MM-DD HH:mm:ss"),
+        spray: 1,
+        settings: timerJson
+      }
+      console.log({jsonData})
+      if (timerJson.length > 0) {
+        const timerData = `TIMER:${JSON.stringify(jsonData)}#`
+        console.log("dataview timer: ", timerData.length, textToDataView(timerData))
+
+        for (let i=0; i < timerData.length; i+= 500) {
+          const cutData = timerData.substr(i, 500)
+          console.log("timerdata: ", cutData)
+          await BleClient.write(props.selectedDevice.address, FRUGAL_SERVICE, FRUGAL_CHARACTERISTIC, textToDataView(cutData))
+        }
+
+        // await BluetoothSerial.write(`TIMER:${timers.join('|')}`)
         props.onSetLoading(true)
       } else {
         alert('Nothing to sync')

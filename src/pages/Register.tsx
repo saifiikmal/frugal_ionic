@@ -18,12 +18,13 @@ import {
   IonSelectOption,
   IonIcon
 } from '@ionic/react'
-import { BluetoothDevice, DeviceData } from '../types/device';
+import { BluetoothDevice, DeviceData, FRUGAL_SERVICE, FRUGAL_CHARACTERISTIC } from '../types/device';
 import { qrCode } from 'ionicons/icons'
 import { BarcodeFormat, BarcodeScanner} from '@capacitor-mlkit/barcode-scanning'
 import DispenserAPI from '../api/dispenser'
 import CanisterAPI from '../api/canister'
-import { BluetoothSerial } from '@awesome-cordova-plugins/bluetooth-serial';
+// import { BluetoothSerial } from '@awesome-cordova-plugins/bluetooth-serial';
+import { BleClient, dataViewToText, textToDataView } from '@capacitor-community/bluetooth-le';
 import moment from 'moment'
 interface RegisterProps {
   selectedDevice: BluetoothDevice | null,
@@ -146,12 +147,21 @@ const Register: React.FC<{
         const resp = await CanisterAPI.registerCanister(props.dispenser.dispenserId.id, serialNo)
 
         if (resp && props.selectedDevice && props.isConnected) {
-          const unixDate = moment().unix()
+          const currentDate = moment().format("YYYY-MM-DD HH:mm:ss")
           const dispenserSno = props.dispenser.dispenserId.serialNumber ? props.dispenser.dispenserId.serialNumber : ""
           const dispLimit = props.dispenser.latestcanister.length > 0 ? props.dispenser.latestcanister[0].canisterId.initialSprays : ""
 
-          await BluetoothSerial.write(`SYNC:${unixDate},${dispenserSno},${serialNo},${dispLimit}`)
+          const jsonData = {
+            time: currentDate,
+            dispenser: dispenserSno,
+            canister: serialNo,
+            dispense_limit: dispLimit
+          }
+          const syncData = `SYNC:${JSON.stringify(jsonData)}#`
+          await BleClient.write(props.selectedDevice.address, FRUGAL_SERVICE, FRUGAL_CHARACTERISTIC, textToDataView(syncData))
+          // await BluetoothSerial.write(`SYNC:${unixDate},${dispenserSno},${serialNo},${dispLimit}`)
           props.onSetLoading(true)
+          props.onSelectDevice()
           // props.onSelectDevice()
         }
         alert('Succesfully registered canister')

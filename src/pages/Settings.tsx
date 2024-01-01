@@ -1,9 +1,10 @@
 import { IonButton, IonButtons, IonCard, IonCardContent, IonCardHeader, IonCardTitle, IonCol, IonContent, IonDatetime, IonDatetimeButton, IonGrid, IonHeader, IonInput, IonItem, IonLabel, IonList, IonMenuButton, IonModal, IonPage, IonRow, IonTitle, IonToolbar } from '@ionic/react';
 import './Settings.css';
-import { BluetoothDevice, DeviceData } from '../types/device';
+import { BluetoothDevice, DeviceData, FRUGAL_SERVICE, FRUGAL_CHARACTERISTIC } from '../types/device';
 import moment from 'moment';
 import { useEffect, useState } from 'react';
-import { BluetoothSerial } from '@awesome-cordova-plugins/bluetooth-serial';
+// import { BluetoothSerial } from '@awesome-cordova-plugins/bluetooth-serial';
+import { BleClient, dataViewToText, textToDataView } from '@capacitor-community/bluetooth-le';
 
 interface SettingsProps {
   selectedDevice: BluetoothDevice | null,
@@ -41,7 +42,7 @@ const Settings: React.FC<{
   }
 
   const syncClock = async () => {
-    const unixDate = moment().unix()
+    const currentDate = moment().format("YYYY-MM-DD HH:mm:ss")
 
     // console.log('unixDate: ', unixDate)
     const canisterSno = props.dispenser.latestcanister.length > 0 ? props.dispenser.latestcanister[0].canisterId.serialNumber : ""
@@ -49,8 +50,18 @@ const Settings: React.FC<{
     const dispLimit = props.dispenser.latestcanister.length > 0 ? props.dispenser.latestcanister[0].canisterId.initialSprays : ""
 
     if (confirm("Confirm to sync the settings?")) {
-      await BluetoothSerial.write(`SYNC:${unixDate},${dispenserSno},${canisterSno},${dispLimit}`)
-      props.onSetLoading(true)
+      if (props.selectedDevice) {
+        const jsonData = {
+          time: currentDate,
+          dispenser: dispenserSno,
+          canister: canisterSno,
+          dispense_limit: dispLimit
+        }
+        const syncData = `SYNC:${JSON.stringify(jsonData)}#`
+        await BleClient.write(props.selectedDevice.address, FRUGAL_SERVICE, FRUGAL_CHARACTERISTIC, textToDataView(syncData))
+        // await BluetoothSerial.write(`SYNC:${unixDate},${dispenserSno},${canisterSno},${dispLimit}`)
+        props.onSetLoading(true)
+      }
     }
   }
 
@@ -64,8 +75,18 @@ const Settings: React.FC<{
         props.deviceData.pauseBetweenSpray != newPauseSpray
       ) {
         if (confirm("Confirm to update the settings?")) {
-          await BluetoothSerial.write(`SET:${newSprayPress},${newPauseSpray}`)
-          props.onSetLoading(true)
+          if (props.selectedDevice) {
+            const jsonData = {
+              spray_press_duration: newSprayPress,
+              pause_between_spray: newPauseSpray
+            }
+            const syncData = `SET:${JSON.stringify(jsonData)}#`
+            await BleClient.write(props.selectedDevice.address, FRUGAL_SERVICE, FRUGAL_CHARACTERISTIC, textToDataView(syncData))
+            // await BluetoothSerial.write(`SYNC:${unixDate},${dispenserSno},${canisterSno},${dispLimit}`)
+            props.onSetLoading(true)
+          }
+          // await BluetoothSerial.write(`SET:${newSprayPress},${newPauseSpray}`)
+          // props.onSetLoading(true)
         }
       }
     }
@@ -103,7 +124,7 @@ const Settings: React.FC<{
                 <IonList>
                   <IonItem>
                     <IonLabel>Device Clock</IonLabel>
-                    <IonLabel>{props.deviceData ? moment.unix(props.deviceData.currentTime).format("DD/MM/YY, h:mm A") : ""}</IonLabel>
+                    <IonLabel>{props.deviceData ? moment.unix(props.deviceData.currentTime).utc().format("DD/MM/YY, h:mm A") : ""}</IonLabel>
                   </IonItem>
                   
                 </IonList>
@@ -117,12 +138,12 @@ const Settings: React.FC<{
               <IonCardContent>
                 <IonList>
                   <IonItem>
-                    <IonLabel>Spray Press Duration (Seconds)</IonLabel>
+                    <IonLabel>Spray Press Duration (ms)</IonLabel>
                     <IonInput onIonInput={(e: any) => setSprayPress(e.target.value)} type="number" placeholder="0" value={props.deviceData ? sprayPress ? sprayPress : props.deviceData.sprayPressDuration : null}></IonInput>
                   </IonItem>
 
                   <IonItem>
-                    <IonLabel>Pause Between Spray (Seconds)</IonLabel>
+                    <IonLabel>Pause Between Spray (ms)</IonLabel>
                     <IonInput onIonInput={(e: any) => setPauseSpray(e.target.value)} type="number" placeholder="0" value={props.deviceData ? pauseSpray ? pauseSpray : props.deviceData.pauseBetweenSpray : null}></IonInput>
                   </IonItem>
                 </IonList>
