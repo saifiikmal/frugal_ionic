@@ -490,7 +490,7 @@ const Schedule: React.FC<{
         </IonGrid>
       }
       { 
-        !props.isConnected  && 
+        props.selectedDevice && !props.isConnected  && 
         <IonGrid>
           <IonRow>
             <IonCol>

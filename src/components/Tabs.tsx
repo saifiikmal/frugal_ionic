@@ -196,6 +196,7 @@ const Tabs: React.FC = () => {
             // console.log('onDisconnected: ', deviceId)
             setIsLoading(false)
             setConnected(false)
+            setSelectedDevice(null)
           });
           console.log('connected to device', device);
 
