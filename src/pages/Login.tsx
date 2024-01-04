@@ -32,9 +32,14 @@ const Login: React.FC = () => {
   const { loading, error, login } = useAuth();
   const handleLogin = async () => {
 
+    if (username == "") {
+      alert("Please enter your username");
+      // setIserror(true);
+      return;
+    }
     if (!password || password.length < 6) {
-        setMessage("Please enter your password");
-        setIserror(true);
+        alert("Please enter your password");
+        // setIserror(true);
         return;
     }
 
@@ -69,7 +74,7 @@ const Login: React.FC = () => {
                 labelPlacement='floating'
                 type="text"
                 value={username}
-                onIonChange={(e) => setUsername(e.detail.value!)}
+                onIonInput={(e) => setUsername(e.detail.value!)}
                 >
             </IonInput>
             </IonItem>
@@ -84,7 +89,7 @@ const Login: React.FC = () => {
                 labelPlacement='floating'
                 type="password"
                 value={password}
-                onIonChange={(e) => setPassword(e.detail.value!)}
+                onIonInput={(e) => setPassword(e.detail.value!)}
                 >
               </IonInput>
             </IonItem>
@@ -96,9 +101,9 @@ const Login: React.FC = () => {
                   By clicking LOGIN you agree to our <a href="#">Policy</a>
               </p> */}
               <IonButton className="ion-margin-top" expand="block" onClick={handleLogin}>Login</IonButton>
-              {/* <p style={{ fontSize: "medium" }}>
-                  Don't have an account? <a href="#">Sign up!</a>
-              </p> */}
+              <p style={{ fontSize: "medium" }}>
+                  Don't have an account? <a href="https://frugal.sirimsense.com/register">Sign up!</a>
+              </p>
 
             </IonCol>
           </IonRow>

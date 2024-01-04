@@ -16,7 +16,8 @@ import {
   IonInput,
   IonSelect,
   IonSelectOption,
-  IonIcon
+  IonIcon,
+  IonBackButton
 } from '@ionic/react'
 import { BluetoothDevice, DeviceData, FRUGAL_SERVICE, FRUGAL_CHARACTERISTIC } from '../types/device';
 import { qrCode } from 'ionicons/icons'
@@ -179,7 +180,8 @@ const Register: React.FC<{
         <IonToolbar>
           <IonTitle>Register</IonTitle>
           <IonButtons slot='start'>
-            <IonMenuButton></IonMenuButton>
+            {/* <IonMenuButton></IonMenuButton> */}
+            <IonBackButton></IonBackButton>
           </IonButtons>
           
         </IonToolbar>
@@ -209,7 +211,7 @@ const Register: React.FC<{
                   label='Serial No.'
                   type="text"
                   value={serialNo}
-                  onIonChange={(e) => setSerialNo(e.detail.value!)}
+                  onIonInput={(e) => setSerialNo(e.detail.value!)}
                   placeholder='Please type/scan QR code your serial no.'
                   className='ion-text-right'
                   

@@ -19,7 +19,7 @@ import {
 import { IonReactRouter } from '@ionic/react-router';
 import { ellipse, square, triangle, list, home, settings } from 'ionicons/icons';
 import Devices from './pages/Devices';
-import Home from './pages/Home';
+import Home from './pages/Dashboard';
 import Settings from './pages/Settings';
 import Login from './pages/Login';
 
@@ -44,6 +44,7 @@ import './theme/variables.css';
 
 import Tabs from './components/Tabs';
 import Menu from './components/Menu';
+import Main from './pages/Main';
 
 import { useAuth } from './context/authContext'
 
@@ -67,14 +68,19 @@ const App: React.FC = () => {
       :
       (
       <IonReactRouter>
-        <IonSplitPane contentId="main">
+        {/* <IonSplitPane contentId="main">
           <Menu />
           <IonRouterOutlet id="main">
             <Route path="/">
-              <Tabs />
+              <Main />
             </Route>
           </IonRouterOutlet>
-        </IonSplitPane>
+        </IonSplitPane> */}
+        <IonRouterOutlet>
+        <Route path="/">
+          <Main />
+        </Route>
+      </IonRouterOutlet>
       </IonReactRouter>
       )
     }

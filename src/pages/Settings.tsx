@@ -1,4 +1,4 @@
-import { IonButton, IonButtons, IonCard, IonCardContent, IonCardHeader, IonCardTitle, IonCol, IonContent, IonDatetime, IonDatetimeButton, IonGrid, IonHeader, IonInput, IonItem, IonLabel, IonList, IonMenuButton, IonModal, IonPage, IonRow, IonTitle, IonToolbar } from '@ionic/react';
+import { IonButton, IonButtons, IonCard, IonCardContent, IonCardHeader, IonBackButton, IonCardTitle, IonCol, IonContent, IonDatetime, IonDatetimeButton, IonGrid, IonHeader, IonInput, IonItem, IonLabel, IonList, IonMenuButton, IonModal, IonPage, IonRow, IonTitle, IonToolbar } from '@ionic/react';
 import './Settings.css';
 import { BluetoothDevice, DeviceData, FRUGAL_SERVICE, FRUGAL_CHARACTERISTIC } from '../types/device';
 import moment from 'moment';
@@ -99,7 +99,8 @@ const Settings: React.FC<{
         <IonToolbar>
           <IonTitle>Settings</IonTitle>
           <IonButtons slot='start'>
-            <IonMenuButton></IonMenuButton>
+            {/* <IonMenuButton></IonMenuButton> */}
+            <IonBackButton></IonBackButton>
           </IonButtons>
           <IonButtons slot="end" style={{ marginRight: '15px'}}>
             <IonButton fill="solid" color={'primary'} onClick={connectDevice}>

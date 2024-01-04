@@ -32,7 +32,8 @@ import {
   IonDatetimeButton,
   IonDatetime,
   IonCheckbox,
-  IonLoading
+  IonLoading,
+  IonBackButton
 } from '@ionic/react'
 import { BluetoothDevice, DeviceData, FRUGAL_SERVICE, FRUGAL_CHARACTERISTIC } from '../types/device';
 import { qrCode, trash, pencil, add } from 'ionicons/icons'
@@ -44,30 +45,34 @@ import './Schedule.css'
 import { OverlayEventDetail } from '@ionic/react/dist/types/components/react-component-lib/interfaces';
 // import { BluetoothSerial } from '@awesome-cordova-plugins/bluetooth-serial';
 import { BleClient, dataViewToText, textToDataView } from '@capacitor-community/bluetooth-le';
+import { RouteComponentProps } from 'react-router';
 
-interface ScheduleProps {
+interface ScheduleProps extends RouteComponentProps<{
+  id: string;
+}> {
   isConnected: boolean,
   selectedDevice: BluetoothDevice | null,
-  dispenser: any,
+  isProcessing: boolean,
+  // dispenser: any,
   onConnected(device: BluetoothDevice | null): any,
   onSelectDevice: any,
-  onSetLoading(val: boolean): any,
+  // onSetLoading(val: boolean): any,
 }
 
-const Schedule: React.FC<{
-  isConnected: boolean,
-  selectedDevice: BluetoothDevice | null,
-  dispenser: any,
-  onConnected(device: BluetoothDevice | null): any,
-  onSelectDevice: any,
-  onSetLoading(val: boolean): any,
-}> = (props: ScheduleProps) => {
-
+const Schedule: React.FC<ScheduleProps> = (props: ScheduleProps) => {
+  const [dispenser, setDispenser] = useState<any>(null)
   const [dispenserTime, setDispenserTime] = useState<any | null>(null)
   const [loading, setLoading] = useState<boolean>(false)
 
   const [isOpen, setIsOpen] = useState<boolean>(false);
   const [action, setAction] = useState<string | null>(null)
+  const [timerFormat, setTimerFormat] = useState<string | null>(null)
+  const [presetInterval, setPresetInterval] = useState<string | null | undefined>(null)
+  const [newPresetInterval, setNewPresetInterval] = useState<string | null | undefined>(null)
+  const [presetStart, setPresetStart] = useState<string | string[] | null | undefined>(null)
+  const [newPresetStart, setNewPresetStart] = useState<string | string[] | null | undefined>(null)
+  const [presetDispense, setPresetDispense] = useState<string | null | undefined>(null)
+  const [newPresetDispense, setNewPresetDispense] = useState<string | null | undefined>(null)
 
   const prevDispenser = useRef<any>()
 
@@ -76,61 +81,127 @@ const Schedule: React.FC<{
   // );
 
   useEffect(() => {
+    // console.log({props})
+    getDispenser()
+  }, [])
+
+  useEffect(() => {
     
     if (prevDispenser.current) {
-      if (prevDispenser.current.dispenser != props.dispenser) {
+      if (prevDispenser.current.dispenser != dispenser) {
         // console.log('props dispenser changed')
         // console.log('prev: ', prevDispenser.current.dispenser)
         // console.log('next: ', props.dispenser)
-
-        syncTimer()
+        if (props.isConnected && props.selectedDevice && props.selectedDevice.address === dispenser.dispenserId.macAddress) {
+          // syncTimer()
+        }
       }
     }
     
-    prevDispenser.current = { dispenser: props.dispenser }
+    prevDispenser.current = { dispenser: dispenser }
 
   })
 
-  const syncDevice = async () => {
-    if (props.selectedDevice && props.isConnected) {
-      await syncTimer()
-    } else {
-      alert("Please select the device & connect first.")
+  const getDispenser = async () => {
+    setLoading(true)
+    try {
+      const resp = await DispenserAPI.getDispenserByMacAddress(props.match.params.id)
+
+      if (resp.data) {
+        console.log(resp.data)
+        setDispenser(resp.data)
+
+        if (resp.data.dispensertimes.length > 0) {
+          setTimerFormat(resp.data.dispenserId.timerFormat)
+          
+          if (resp.data.dispenserId.timerFormat == "preset") {
+            const time1 = resp.data.dispensertimes[0].timerTime
+            const time2 = resp.data.dispensertimes[1].timerTime
+
+            const startTime = moment(time1, 'HH:mm')
+            const endTime = moment(time2, 'HH:mm')
+            const diffInMin = endTime.diff(startTime, 'minutes')
+
+            const prStart = resp.data.dispensertimes[0].timerTime
+            const prDispense = resp.data.dispensertimes[0].dispenseAmount
+            
+            setPresetInterval(`${diffInMin}`)
+            setPresetStart(prStart)
+            setPresetDispense(prDispense)
+            console.log({diffInMin, prStart})
+          }
+        }
+        
+      }
+      // setLoading(false)
+    } catch (err) {
+      // setLoading(false)
+      alert(err)
+    } finally {
+      setLoading(false)
     }
   }
+
 
   async function handleRefresh(event: CustomEvent<RefresherEventDetail> | null) {
     event == null ? setLoading(true) : null
 
     // if (props.isConnected) await syncTimer()
-
-    setTimeout(() => {
+    await getDispenser()
+    setTimeout(async () => {
       // Any calls to load data go here
       props.onSelectDevice()
+      // if (props.isConnected && props.selectedDevice && props.selectedDevice.address === dispenser.dispenserId.macAddress) {
+      //   await syncTimer()
+      // }
       event ? event.detail.complete() : setLoading(false)
-    }, 2000);
+    }, 3000);
   }
 
   const submitTime = async (action: string | null) => {
     try {
-      if (dispenserTime) {
-        console.log({dispenserTime})
+      // if (dispenserTime) {
+        console.log({timerFormat})
 
-        if (dispenserTime.dispenseAmount == null || dispenserTime.dispenseAmount <= 0) {
+        if (timerFormat == 'custom' && dispenserTime && (dispenserTime.dispenseAmount == null || dispenserTime.dispenseAmount <= 0) ) {
           alert("Amount must be more than zero");
           return;
         }
-        if (action == 'edit') {
-          const resp = await DispenserAPI.updateDispenserTime(dispenserTime.id, dispenserTime)
 
-          // console.log({resp})
-        } else {
-          const resp = await DispenserAPI.createDispenserTime(dispenserTime)
-
-          // console.log({resp})
+        if (action == 'add') {
+          if (timerFormat == 'preset') {
+            if (newPresetInterval == null) {
+              alert("Interval must be select");
+              return;
+            }
+            const resp = await DispenserAPI.createDispenserTime({
+              timerFormat,
+              dispenseAmount: newPresetDispense,
+              presetInterval: newPresetInterval,
+              presetStart: newPresetStart,
+              dispenserId: dispenser.dispenserId.id,
+            })
+          } else {
+            const resp = await DispenserAPI.createDispenserTime({...dispenserTime, timerFormat})
+          }
         }
 
-      }
+        if (action == 'edit') {
+          if (timerFormat == 'preset') {
+            const resp = await DispenserAPI.createDispenserTime({
+              timerFormat,
+              dispenseAmount: newPresetDispense,
+              presetInterval: newPresetInterval,
+              presetStart: newPresetStart,
+              dispenserId:dispenser.dispenserId.id,
+            })
+          } else {
+            const resp = await DispenserAPI.updateDispenserTime(dispenserTime.id, dispenserTime)
+
+          }
+        }
+
+      // }
       setIsOpen(false)
       handleRefresh(null)
     } catch (err) {
@@ -145,12 +216,25 @@ const Schedule: React.FC<{
     setIsOpen(true)
   }
 
+  const editPreset = () => {
+    setAction('edit')
+    setNewPresetDispense(presetDispense)
+    setNewPresetInterval(presetInterval)
+    setNewPresetStart(presetStart)
+    setIsOpen(true)
+  }
+
   const addDispenserTime = () => {
     setAction('add')
     setDispenserTime({
-      dispenserId: props.dispenser.dispenserId.id,
-      timerTime: '00:00'
+      dispenserId: dispenser.dispenserId.id,
+      timerTime: '00:00',
+      presetStart: '00:00'
     })
+    setTimerFormat(null)
+    setNewPresetInterval(null)
+    setNewPresetDispense(null)
+    setNewPresetStart("00:00")
     setIsOpen(true)
   }
 
@@ -178,7 +262,7 @@ const Schedule: React.FC<{
 
   const syncTimer = async () => {
 
-    if (props.selectedDevice && props.isConnected) {
+    if (!props.isProcessing && props.selectedDevice && props.isConnected) {
       // let timers = []
 
       let timerJson: any = []
@@ -186,8 +270,8 @@ const Schedule: React.FC<{
         timerJson[i] = []
       }
 
-      console.log("dispensetimer: ", props.dispenser.dispensertimes)
-      for (let val of props.dispenser.dispensertimes) {
+      console.log("dispensetimer: ", dispenser.dispensertimes)
+      for (let val of dispenser.dispensertimes) {
         if (val.timerType == 'daily') {
           for(let i = 0; i < 7; i++) {
             timerJson[i].push({
@@ -254,7 +338,7 @@ const Schedule: React.FC<{
       }
       let jsonData = {
         time: moment().format("YYYY-MM-DD HH:mm:ss"),
-        spray: 1,
+        spray: 0,
         settings: timerJson
       }
       console.log({jsonData})
@@ -269,9 +353,9 @@ const Schedule: React.FC<{
         }
 
         // await BluetoothSerial.write(`TIMER:${timers.join('|')}`)
-        props.onSetLoading(true)
+        // props.onSetLoading(true)
       } else {
-        alert('Nothing to sync')
+        // alert('Nothing to sync')
       }
     }
   }
@@ -283,23 +367,24 @@ const Schedule: React.FC<{
         <IonToolbar>
           <IonTitle>Schedule</IonTitle>
           <IonButtons slot='start'>
-            <IonMenuButton></IonMenuButton>
+            {/* <IonMenuButton></IonMenuButton> */}
+            <IonBackButton></IonBackButton>
           </IonButtons>
-          <IonButtons slot="end" style={{ marginRight: '15px'}}>
+          {/* <IonButtons slot="end" style={{ marginRight: '15px'}}>
             <IonButton fill="solid" color={'primary'} onClick={syncDevice}>
               Sync
             </IonButton>
-          </IonButtons>
+          </IonButtons> */}
         </IonToolbar>
       </IonHeader>
       <IonContent fullscreen className="ion-padding">
         <IonRefresher slot="fixed" onIonRefresh={handleRefresh}>
           <IonRefresherContent></IonRefresherContent>
         </IonRefresher>
-        { props.isConnected && props.selectedDevice && props.dispenser && 
+        { dispenser && 
         <>
         <IonList>
-          { props.dispenser.dispensertimes.map((times: any) => {
+          { dispenser.dispenserId.timerFormat === 'custom' && dispenser.dispensertimes.map((times: any) => {
               let arrWeekly = []
               if (times.timerType === 'weekly') {
                 if (times.sunday) arrWeekly.push('Sunday')
@@ -338,6 +423,20 @@ const Schedule: React.FC<{
               }
             )
           }
+          { dispenser.dispenserId.timerFormat === 'preset' && 
+            <IonItem button={true} detail={false} onClick={() => editPreset()}>
+              <div className="unread-indicator-wrapper" slot="start">
+                  <div className="weekly-indicator">P</div>
+              </div>
+              <IonLabel className="ion-align-items-center" style={{display: 'flex'}}>
+                <strong>Interval: {presetInterval} min</strong>
+                <br />
+              </IonLabel>
+              <div slot="end">
+                <IonNote color="medium">{presetDispense}</IonNote>
+              </div>
+            </IonItem>
+          }
         </IonList>
         
         <IonFab slot="fixed" vertical="bottom" horizontal="end">
@@ -363,6 +462,103 @@ const Schedule: React.FC<{
           </IonHeader>
           <IonContent className="ion-padding">
           <IonGrid>
+            {action == 'add' && <IonRow>
+              <IonCol>
+                <IonItem className='ion-margin-top'>
+                  <IonSelect 
+                    label="Format" 
+                    placeholder="Preset/Custom"
+                    onIonChange={(e) => setTimerFormat(e.detail.value)}
+                    value={timerFormat}
+                  >
+                    <IonSelectOption value="preset">Preset</IonSelectOption>
+                    <IonSelectOption value="custom">Custom</IonSelectOption>
+                  </IonSelect>
+                </IonItem>
+              </IonCol>
+            </IonRow>
+            }
+            {timerFormat == 'preset' && <IonRow>
+              <IonCol>
+              <IonItem>
+              <IonInput 
+                label="Dispense amount" 
+                type='number'
+                placeholder="Amount"
+                onIonInput={(e) => setNewPresetDispense(e.detail.value)}
+                value={newPresetDispense}
+                required
+                inputMode='numeric'
+                className='ion-text-end'
+              >
+                
+              </IonInput>
+              
+              </IonItem>
+              </IonCol>
+            </IonRow>
+            }
+            {timerFormat == 'custom' && <IonRow>
+              <IonCol>
+              <IonItem>
+              <IonInput 
+                label="Dispense amount" 
+                type='number'
+                placeholder="Amount"
+                onIonInput={(e) => onChange('dispenseAmount',e.detail.value)}
+                value={dispenserTime != null && dispenserTime.dispenseAmount ? dispenserTime.dispenseAmount : null}
+                required
+                inputMode='numeric'
+                className='ion-text-end'
+              >
+                
+              </IonInput>
+              
+              </IonItem>
+              </IonCol>
+            </IonRow>
+            }
+            { timerFormat == 'preset' && <>
+            <IonRow>
+              <IonCol>
+                <IonItem className='ion-margin-top'>
+                  <IonSelect 
+                    label="Interval (min)" 
+                    placeholder="Interval"
+                    onIonChange={(e) => setNewPresetInterval(e.detail.value)}
+                    value={ newPresetInterval}
+                  >
+                    {/* <IonSelectOption value="5">5</IonSelectOption> */}
+                    <IonSelectOption value="15">15</IonSelectOption>
+                    <IonSelectOption value="30">30</IonSelectOption>
+                    <IonSelectOption value="45">45</IonSelectOption>
+                    <IonSelectOption value="60">60</IonSelectOption>
+                  </IonSelect>
+                </IonItem>
+              </IonCol>
+            </IonRow>
+            <IonRow>
+              <IonCol>
+                <IonItem>
+                  <IonLabel>Start Time</IonLabel>
+                  <IonDatetimeButton datetime="startTime"></IonDatetimeButton>
+
+                  <IonModal keepContentsMounted={true}>
+                    <IonDatetime 
+                      id="startTime" 
+                      presentation='time'
+                      onIonChange={e => setNewPresetStart(e.detail.value)}
+                      minuteValues="0,15,30,45"
+                      value={newPresetStart}
+                    >
+                    </IonDatetime>
+                  </IonModal>
+                </IonItem>
+              </IonCol>
+            </IonRow>
+            </>
+            }
+            { timerFormat == 'custom' && <>
             <IonRow>
               <IonCol>
                 <IonItem className='ion-margin-top'>
@@ -396,26 +592,10 @@ const Schedule: React.FC<{
                 </IonItem>
               </IonCol>
             </IonRow>
-            <IonRow>
-              <IonCol>
-              <IonItem>
-              <IonInput 
-                label="Dispense amount" 
-                type='number'
-                placeholder="Amount"
-                onIonChange={(e) => onChange('dispenseAmount',e.detail.value)}
-                value={dispenserTime != null && dispenserTime.dispenseAmount ? dispenserTime.dispenseAmount : null}
-                required
-                inputMode='numeric'
-                className='ion-text-end'
-              >
-                
-              </IonInput>
-              
-              </IonItem>
-              </IonCol>
-            </IonRow>
-            { dispenserTime != null && dispenserTime.timerType === 'weekly' &&
+            </>
+            }
+            
+            { timerFormat == 'custom' && dispenserTime != null && dispenserTime.timerType === 'weekly' &&
               <>
               <IonRow>
                 <IonCol>
@@ -469,7 +649,7 @@ const Schedule: React.FC<{
           </IonContent>
         </IonModal>
       
-      { 
+      {/* { 
         props.selectedDevice && !props.dispenser  && 
         <IonGrid>
           <IonRow>
@@ -498,7 +678,7 @@ const Schedule: React.FC<{
             </IonCol>
           </IonRow>
         </IonGrid>
-      }
+      } */}
       </IonContent>
     </IonPage>
   )

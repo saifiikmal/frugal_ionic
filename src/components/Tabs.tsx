@@ -13,7 +13,7 @@ import { useEffect, useRef, useState } from 'react';
 import { ellipse, square, triangle, list, home, settings } from 'ionicons/icons';
 
 import Devices from '../pages/Devices';
-import Home from '../pages/Home';
+import Home from '../pages/Dashboard';
 import Settings from '../pages/Settings';
 
 import { AndroidPermissions } from '@awesome-cordova-plugins/android-permissions'
@@ -94,6 +94,7 @@ const Tabs: React.FC = () => {
           // await BluetoothSerial.write("GET")
           if (selectedDevice) {
             await BleClient.write(selectedDevice.address, FRUGAL_SERVICE, FRUGAL_CHARACTERISTIC, textToDataView("GET#"))
+            await syncDevice(selectedDevice)
           }
           // await BluetoothSerial.write("CLOCK")
           // console.log("data: ", data)
@@ -260,7 +261,7 @@ const Tabs: React.FC = () => {
                   }
                   setDeviceData(dd)
 
-                  await syncDevice(dd)
+                  // await syncDevice(dd)
                   
                   if (dispenser) {
                     DispenserAPI.updateDispenser(dispenser.dispenserId.id, {
@@ -287,138 +288,7 @@ const Tabs: React.FC = () => {
       setIsLoading(false)
       setConnected(false)
     }
-    // disconnect
-    // setIsLoading(true)
-    // console.log({device})
-    // try {
-    //   if (device) {
-    //     setIsLoading(true)
-
-    //     if (isConnected) {
-    //       const dc =  await BluetoothSerial.disconnect()
-  
-    //       if (dc) {
-    //         setConnected(false)
-    //         setIsLoading(false)
-    //       }
-    //     } else {
-    //       const bt = await BluetoothSerial.connect(device.address)
-          
-    //       bt.subscribe(
-    //         {
-    //           error: (e) => {
-    //             setIsLoading(false)
-    //             setConnected(false)
-    //             setSelectedDevice(null)
-    //             setDispenser(null)
-    //             alert("Please reconnect again")
-    //           },
-    //           next: async () => {
-    //             const isConn = await BluetoothSerial.isConnected()
-  
-    //             if (isConn) {
-    //               setConnected(true)
-  
-    //               await BluetoothSerial.write("GET")
-
-    //               BluetoothSerial.subscribe("\n").subscribe(
-    //                 {
-    //                   error: (e) => {
-    //                     setIsLoading(false)
-    //                     setConnected(false)
-    //                     alert("Something wrong. Please try again")
-    //                   },
-    //                   next: async (value) => {
-    //                     if (value.startsWith("SET:")) {
-    //                       onUpdateData()
-    //                     }
-    //                     if (value.startsWith("SYNC:")) {
-    //                       onUpdateData()
-    //                     }
-    //                     if (value.startsWith("TIMER:")) {
-    //                       onUpdateData()
-    //                     }
-    //                     if (value.startsWith("CLEAR:")) {
-    //                       onUpdateData()
-    //                     }
-    //                     if (value.startsWith("CLOCK:")) {
-    //                       console.log("CLOCK data: ", value.substring(6))
-    //                     }
-
-    //                     if (value.startsWith("GET:")) {
-    //                       setIsLoading(false)
-    //                       // console.log("GET data: ", value.substring(4))
-    //                       let newValue = value.substring(4)
     
-    //                       const [
-    //                         id,
-    //                         dispenserSno,
-    //                         canisterSno,
-    //                         currentTime,
-    //                         sprayPressDuration,
-    //                         pauseBetweenSpray,
-    //                         lastDispense,
-    //                         lastDispenseCounter,
-    //                         counter,
-    //                         dispenseLimit,
-    //                         status,
-    //                         isSync,
-    //                       ] = newValue.replace(/(\r\n|\n|\r)/gm, "").split(",")
-
-    //                       setDeviceData({
-    //                         id,
-    //                         dispenserSno,
-    //                         canisterSno,
-    //                         currentTime,
-    //                         sprayPressDuration,
-    //                         pauseBetweenSpray,
-    //                         lastDispense,
-    //                         lastDispenseCounter,
-    //                         counter,
-    //                         dispenseLimit,
-    //                         status,
-    //                         isSync,
-    //                       })
-
-    //                       if (dispenser) {
-    //                         const dispLimit = dispenser.latestcanister.length > 0 ? dispenser.latestcanister[0].canisterId.initialSprays : ""
-
-    //                         if (Number(isSync) == 0) {
-    //                           const unixDate = moment().unix()
-    //                           const canisterSno = dispenser.latestcanister.length > 0 ? dispenser.latestcanister[0].canisterId.serialNumber : ""
-    //                           const dispenserSno = dispenser.dispenserId.serialNumber ? dispenser.dispenserId.serialNumber : ""
-
-    //                           // console.log({dispLimit})
-
-    //                           await BluetoothSerial.write(`SYNC:${unixDate},${dispenserSno},${canisterSno},${dispLimit}`)
-    //                         } else {
-    //                           if (dispenser.latestcanister.length > 0) {
-    //                             await CanisterAPI.updateCanister(dispenser.latestcanister[0].canisterId.id, {
-    //                               remainingSprays: dispLimit - counter
-    //                             })
-    //                           }
-    //                         }
-    //                       }
-    //                     }
-    //                   },
-                      
-    //                 }
-    //               )
-    //             } else {
-                  
-    //             }
-    //           }
-    //         }
-    //       )
-    //     }
-    //   }
-    // } 
-    // catch (err) {
-    //   // console.log({err})
-    //   alert(err)
-    //   setIsLoading(false)
-    //   setConnected(false)
-    // }
   }
 
   const onUpdateData = async () => {
@@ -471,25 +341,6 @@ const Tabs: React.FC = () => {
     }
   }
 
-  // const handleLoading = async (val: boolean) => {
-  //   setIsLoading(val)
-
-  //   setTimeout(async () => {
-  //     console.log({isLoading})
-  //     try {
-  //       // const btConnected = await BluetoothSerial.isConnected()
-  //       // console.log({btConnected})
-  //       if (isLoading) {
-  //         setIsLoading(false)
-  //         alert("Something wrong. Please try again")
-  //       }
-  //     } catch (err) {
-  //       setIsLoading(false)
-  //       alert("Something wrong. Please try again")
-  //     }
-      
-  //   }, 20000)
-  // }
   return (
     <>
       <IonLoading isOpen={isLoading} />

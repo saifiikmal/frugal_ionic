@@ -34,7 +34,7 @@ import {
   IonBadge,
 } from '@ionic/react';
 import { checkmarkOutline, bulbOutline, add } from 'ionicons/icons';
-import './Devices.css';
+import './RegisterSelect.css';
 
 // import { BluetoothSerial } from '@awesome-cordova-plugins/bluetooth-serial'
 import { BleClient } from '@capacitor-community/bluetooth-le';
@@ -43,18 +43,21 @@ import { BarcodeFormat, BarcodeScanner} from '@capacitor-mlkit/barcode-scanning'
 
 import { BluetoothDevice, DeviceProps } from '../types/device'
 
-import DispenserAPI from '../api/dispenser'
-import { Route } from 'react-router';
+import CanisterAPI from '../api/canister'
+import { Route, RouteComponentProps } from 'react-router';
 import DeviceDetail from './DeviceDetail';
 
-const Devices: React.FC<{
+interface RegisterSelectProps
+{
   devices: BluetoothDevice[], 
   selectedDevice: BluetoothDevice | null,
   onSelectDevice: any,
   dispensers: any[],
   onGetDispensers: any,
   isConnected: boolean,
-}> = (props: DeviceProps) => {
+}
+
+const RegisterSelect: React.FC<RegisterSelectProps> = (props: RegisterSelectProps) => {
   const [devices, setDevices] = useState(props.devices)
   const [selectedDevice, setSelectedDevice] = useState(props.selectedDevice)
   const [loading, setLoading] = useState(false)
@@ -62,6 +65,8 @@ const Devices: React.FC<{
   const [isAddDevice, setAddDevice] = useState(false)
   const [dispenser, setDispenser] = useState<any>(null)
   const [dispenserName, setDispenserName] = useState<string | null | undefined>(null)
+  const [currDispenser, setCurrDispenser] = useState<any>(null)
+  // console.log("match: ", props)
 
   useEffect(() => {
     props.onGetDispensers();
@@ -75,60 +80,12 @@ const Devices: React.FC<{
     // ])
   }, [])
 
-
   useEffect(() => {
     if (!props.selectedDevice) {
       setSelectedDevice(null)
     }
   }, [props.selectedDevice])
 
-  // const scanDevices = async () => {
-  //   if (!loading) {
-  //     // setIsScanning(true)
-  //     // const list = await BluetoothSerial.list();
-  //     // setDevices(list)
-  //     // setIsScanning(false)
-  //     try {
-  //       await BleClient.initialize();
-
-  //       // const device = await BleClient.requestDevice({
-  //       //   services: ["4fafc201-1fb5-459e-8fcc-c5c9c331914b"],
-  //       // });
-
-  //       // console.log("ble device: ", device)
-  //       setLoading(true)
-  //       const list: BluetoothDevice[] = []
-
-  //       await BleClient.requestLEScan(
-  //         {
-  //           // services: ["4fafc201-1fb5-459e-8fcc-c5c9c331914b"],
-  //           name: 'Frugal'
-  //         },
-  //         (result) => {
-  //           console.log('received new scan result', result);
-  //           list.push({
-  //             id: result.device.deviceId,
-  //             address: result.device.deviceId,
-  //             name: result.localName ? result.localName : "Unknown"
-  //           })
-  //         }
-  //       );
-  //       setTimeout(async () => {
-  //         await BleClient.stopLEScan();
-  //         console.log('stopped scanning');
-  //         setDevices(list)
-  //         setLoading(false)
-  //       }, 5000);
-  //     } catch (err) {
-  //       console.error(err)
-  //     }
-  //   }
-  // }
-
-  // const selectDevice = (val: BluetoothDevice) => {
-  //   setSelectedDevice(val)
-  //   props.onSelectDevice(val)
-  // }
 
   async function handleRefresh(event: CustomEvent<RefresherEventDetail> | null) {
     event == null ? setLoading(true) : null
@@ -142,31 +99,9 @@ const Devices: React.FC<{
     }, 2000);
   }
 
-  const editDevice = (dispenser: any) => {
-    try {
-      setDispenser(dispenser)
-      setDispenserName(dispenser.dispenserId.name)
-      setIsOpen(true)
-    } catch (err) {
-
-    }
-  }
-
-  const updateDevice = async () => {
-    setLoading(true)
-    try {
-      if (dispenser) {
-        const resp = await DispenserAPI.updateDispenser(dispenser.dispenserId.id, {
-          name: dispenserName
-        })
-      }
-      setLoading(false)
-      setIsOpen(false)
-      handleRefresh(null)
-    } catch (err) {
-      alert(err)
-      setLoading(false)
-    }
+  const addCanister = async (dispenser: any) => {
+    setCurrDispenser(dispenser)
+    setAddDevice(true)
   }
 
   const handleQR = async () => {
@@ -212,10 +147,10 @@ const Devices: React.FC<{
       if (barcodes.length) {
         const code = barcodes[0].rawValue
 
-        await DispenserAPI.registerDispenser(code)
+        const resp = await CanisterAPI.registerCanister(currDispenser.dispenserId.id, code)
       }
       setLoading(false)
-      alert('Device successfully registered.')
+      alert('Canister successfully registered.')
       handleRefresh(null)
     } catch (err) {
       // alert(err)
@@ -228,6 +163,8 @@ const Devices: React.FC<{
     // console.log({camera})
     return camera === 'granted' || camera === 'limited';
   }
+
+
   return (
     <IonPage>
       {/* <IonRouterOutlet>
@@ -238,7 +175,7 @@ const Devices: React.FC<{
       <IonLoading isOpen={loading} />
       <IonHeader>
         <IonToolbar>
-          <IonTitle>Devices</IonTitle>
+          <IonTitle>Register</IonTitle>
           <IonButtons slot='start'>
             {/* <IonMenuButton></IonMenuButton> */}
             <IonBackButton></IonBackButton>
@@ -256,7 +193,7 @@ const Devices: React.FC<{
         </IonRefresher>
         <IonHeader collapse="condense">
           <IonToolbar>
-            <IonTitle size="large">Devices</IonTitle>
+            <IonTitle size="large">Register</IonTitle>
           </IonToolbar>
         </IonHeader>
         <IonGrid>
@@ -265,7 +202,7 @@ const Devices: React.FC<{
               const found = devices.find(x => x.address == dispenser.dispenserId.macAddress)
               return (
                 <IonCol size='6' key={i}>
-                  <IonCard color="light" onClick={() => editDevice(dispenser)}>
+                  <IonCard color="light" onClick={() => addCanister(dispenser)}>
                   {/* <IonCardHeader style={found ? {color: 'white'} : {color: 'gray'}}>
                     <IonIcon icon={bulbOutline} size="large"  />
                     <IonCardTitle>{dispenser.dispenserId.name}</IonCardTitle>
@@ -278,7 +215,7 @@ const Devices: React.FC<{
                           <IonCol>
                             <IonIcon className="ion-margin-top" icon={bulbOutline} size="large" color={found ? 'warning' : 'medium'} />
                             <IonCardTitle className="ion-margin-top">{dispenser.dispenserId.name}</IonCardTitle>
-                            <IonCardSubtitle style={{marginTop: '10px'}}>{dispenser.dispenserId.macAddress}</IonCardSubtitle><br />
+                            <IonCardSubtitle style={{marginTop: '10px'}}>{dispenser.dispenserId.macAddress}</IonCardSubtitle> <br />
                             { props.isConnected && props.selectedDevice?.address == dispenser.dispenserId.macAddress ? 
                             <IonBadge color="success">Connected</IonBadge> : null }
                           </IonCol>
@@ -323,17 +260,12 @@ const Devices: React.FC<{
             </IonRow>
           </IonGrid>
         } */}
-        <IonFab slot="fixed" vertical="bottom" horizontal="end">
-          <IonFabButton>
-            <IonIcon icon={add}onClick={() => setAddDevice(true)}></IonIcon>
-          </IonFabButton>
-        </IonFab>
         <IonAlert
         // trigger="present-alert"
         isOpen={isAddDevice}
-        header="Add Device"
+        header="Add Canister"
         // subHeader="A Sub Header Is Optional"
-        message="Please scan QR code on the dispenser to register."
+        message="Please scan QR code on the canister to register."
         buttons={[
           {
             text: 'Cancel',
@@ -353,49 +285,9 @@ const Devices: React.FC<{
         ]}
         onWillDismiss={() => setAddDevice(false)}
       ></IonAlert>
-        <IonModal 
-        isOpen={isOpen}
-        onWillDismiss={() => setIsOpen(false)}
-        >
-          <IonHeader>
-            <IonToolbar>
-              <IonButtons slot="start">
-                <IonButton onClick={() => setIsOpen(false)}>Cancel</IonButton>
-              </IonButtons>
-              <IonTitle className='ion-text-center'>Edit Device</IonTitle>
-              <IonButtons slot="end">
-                <IonButton strong={true} onClick={() => updateDevice()}>
-                  Save
-                </IonButton>
-              </IonButtons>
-            </IonToolbar>
-          </IonHeader>
-          <IonContent className="ion-padding">
-          <IonGrid>
-            <IonRow>
-              <IonCol>
-              <IonItem>
-              <IonInput
-                label="Name" 
-                placeholder="Name"
-                onIonInput={(e) => setDispenserName(e.detail.value)}
-                value={dispenserName}
-                required
-                className='ion-text-end'
-              >
-                
-              </IonInput>
-              
-              </IonItem>
-              </IonCol>
-            </IonRow>
-            
-          </IonGrid>
-          </IonContent>
-        </IonModal>
       </IonContent>
     </IonPage>
   );
 };
 
-export default Devices;
+export default RegisterSelect;

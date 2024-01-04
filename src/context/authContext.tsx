@@ -80,6 +80,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = (props) => {
       })
     } catch (err: any) {
       // alert(err)
+      localStorage.removeItem('accessToken');
       console.error(err)
       dispatch({
         type: 'AUTH_FAILED',

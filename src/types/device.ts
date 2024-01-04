@@ -9,6 +9,9 @@ export interface DeviceProps {
   devices: BluetoothDevice[],
   selectedDevice: BluetoothDevice | null,
   onSelectDevice(device: BluetoothDevice): any,
+  dispensers: any[],
+  onGetDispensers(): any,
+  isConnected: boolean,
 }
 
 export interface DeviceData {
