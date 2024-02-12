@@ -159,6 +159,7 @@ const Schedule: React.FC<ScheduleProps> = (props: ScheduleProps) => {
   }
 
   const submitTime = async (action: string | null) => {
+    setLoading(true)
     try {
       // if (dispenserTime) {
         console.log({timerFormat})
@@ -202,6 +203,7 @@ const Schedule: React.FC<ScheduleProps> = (props: ScheduleProps) => {
         }
 
       // }
+      setLoading(false)
       setIsOpen(false)
       handleRefresh(null)
     } catch (err) {
@@ -258,6 +260,17 @@ const Schedule: React.FC<ScheduleProps> = (props: ScheduleProps) => {
     console.log({newTime})
     setDispenserTime(newTime)
     // console.log({newTime})
+  }
+
+  const clearSchedule = async () => {
+    try {
+      if (confirm('Are you sure you want to clear all schedule?')) {
+        const resp = await DispenserAPI.clearSchedule(dispenser.dispenserId.id)
+        handleRefresh(null)
+      }
+    } catch (err) {
+      console.log(err)
+    }
   }
 
   const syncTimer = async () => {
@@ -381,8 +394,20 @@ const Schedule: React.FC<ScheduleProps> = (props: ScheduleProps) => {
         <IonRefresher slot="fixed" onIonRefresh={handleRefresh}>
           <IonRefresherContent></IonRefresherContent>
         </IonRefresher>
+        { dispenser && dispenser.dispensertimes.length === 0 &&
+          <IonRow>
+            <IonCol>Please click <b>+</b> button below to add schedule</IonCol>
+          </IonRow>
+        }
         { dispenser && 
         <>
+        {dispenser.dispensertimes.length > 0 &&
+          <IonRow>
+            <IonCol className='ion-text-end'>
+            <IonButton size='small' fill='outline' onClick={() => clearSchedule()}>Clear All</IonButton>
+            </IonCol>
+          </IonRow>
+        }
         <IonList>
           { dispenser.dispenserId.timerFormat === 'custom' && dispenser.dispensertimes.map((times: any) => {
               let arrWeekly = []
@@ -399,18 +424,19 @@ const Schedule: React.FC<ScheduleProps> = (props: ScheduleProps) => {
               let timerTime = moment(times.timerTime, 'HH:mm').format('hh:mm A')
               return (
                 <IonItemSliding key={times.id}>
-                <IonItem button={true} detail={false} onClick={() => editDispenserTime(times)}>
-                  <div className="unread-indicator-wrapper" slot="start">
-                    { times.timerType === 'daily' ? <div className="daily-indicator">D</div> :
-                      <div className="weekly-indicator">W</div>
+                <IonItem button={true} detail={false}>
+                  {/* <IonCheckbox className="ion-margin-end" /> */}
+                  <div className="unread-indicator-wrapper ion-margin-end">
+                    { times.timerType === 'daily' ? <div className="daily-indicator" style={{color: '#fff'}}>D</div> :
+                      <div className="weekly-indicator" style={{color: '#fff'}}>W</div>
                     }
                   </div>
-                  <IonLabel className="ion-align-items-center" style={{display: 'flex'}}>
+                  <IonLabel className="ion-align-items-center" style={{display: 'flex'}}  onClick={() => editDispenserTime(times)}>
                     <strong>{timerTime} - {times.timerType === 'daily' ? 'Daily' : `Every ${arrWeekly.join(', ')}`}</strong>
                     <br />
                   </IonLabel>
                   <div slot="end">
-                    <IonNote color="medium">{times.dispenseAmount}</IonNote>
+                    <IonNote color="#000000"><b>{times.dispenseAmount}</b></IonNote>
                   </div>
                 </IonItem>
                 <IonItemOptions side="end">
@@ -423,17 +449,18 @@ const Schedule: React.FC<ScheduleProps> = (props: ScheduleProps) => {
               }
             )
           }
-          { dispenser.dispenserId.timerFormat === 'preset' && 
-            <IonItem button={true} detail={false} onClick={() => editPreset()}>
-              <div className="unread-indicator-wrapper" slot="start">
+          { dispenser.dispenserId.timerFormat === 'preset' && dispenser.dispensertimes.length > 0 && 
+            <IonItem button={true} detail={false}>
+              {/* <IonCheckbox className="ion-margin-end" /> */}
+              <div className="unread-indicator-wrapper ion-margin-end">
                   <div className="weekly-indicator">P</div>
               </div>
-              <IonLabel className="ion-align-items-center" style={{display: 'flex'}}>
-                <strong>Interval: {presetInterval} min</strong>
+              <IonLabel className="ion-align-items-center" style={{display: 'flex'}} onClick={() => editPreset()}>
+                <strong>Interval: {presetInterval} min: {presetDispense}x</strong>
                 <br />
               </IonLabel>
               <div slot="end">
-                <IonNote color="medium">{presetDispense}</IonNote>
+                <IonNote color="#000000"><b>{presetDispense}</b></IonNote>
               </div>
             </IonItem>
           }

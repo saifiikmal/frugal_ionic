@@ -175,6 +175,10 @@ const Home: React.FC<{
             </IonCol>
           </IonRow>
 
+          <IonRow>
+            <IonCol className='ion-text-center ion-margin-top'>Version { import.meta.env.VITE_APP_VERSION}</IonCol>
+          </IonRow>
+
           {/* <IonRow>
             <IonCol>
               <IonCard color="light">

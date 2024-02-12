@@ -34,6 +34,10 @@ const deleteDispenserTime = (id: any) => {
   return api.delete(`/frugal/dispensertimes/id/653dad8613e455caf72388c2/${id}`)
 }
 
+const clearSchedule = (id: any) => {
+  return api.post(`/frugal/dispensers/clear/653dad8613e455caf72388c2/${id}`)
+}
+
 export default {
   getDispenserWithTime,
   getDispenserWithCanister,
@@ -43,4 +47,5 @@ export default {
   updateDispenserTime,
   createDispenserTime,
   deleteDispenserTime,
+  clearSchedule,
 }

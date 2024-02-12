@@ -42,8 +42,6 @@ import '@ionic/react/css/display.css';
 /* Theme variables */
 import './theme/variables.css';
 
-import Tabs from './components/Tabs';
-import Menu from './components/Menu';
 import Main from './pages/Main';
 
 import { useAuth } from './context/authContext'

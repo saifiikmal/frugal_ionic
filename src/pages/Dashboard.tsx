@@ -139,7 +139,7 @@ const Dashboard: React.FC<DashboardProps> = ({ match }) => {
                   <IonCol style={{ }} className='ion-margin ion-text-center'>
                     <IonIcon icon={timeOutline} size='large' /> <br />
                     <IonCardTitle className="ion-margin-top">{
-                    dispenser.dispenserId.lastSprayDate ? moment(dispenser.dispenserId.lastSprayDate).utc().format("DD/MM/YY, h:mm A") : "-"
+                    dispenser.dispenserId.lastSprayDate === "1970-01-01T00:00:00.000Z" ? "-" : moment(dispenser.dispenserId.lastSprayDate).utc().format("DD/MM/YY, h:mm A")
                     } 
                     </IonCardTitle>
                     <IonCardSubtitle style={{ marginTop: '7px'}}>Last Spray</IonCardSubtitle>
