@@ -492,78 +492,113 @@ const Main: React.FC = () => {
       }
 
       console.log("dispensetimer: ", dispenser.dispensertimes)
-      for (let val of dispenser.dispensertimes) {
-        if (val.timerType == 'daily') {
-          for(let i = 0; i < 7; i++) {
-            timerJson[i].push({
-              time: val.timerTime,
-              dispense: val.dispenseAmount
-            })
-          }
-        } else {
-          if (val.sunday) {
-            timerJson[0].push({
-              time: val.timerTime,
-              dispense: val.dispenseAmount
-            })
-          }
-          if (val.monday) {
-            timerJson[1].push({
-              time: val.timerTime,
-              dispense: val.dispenseAmount
-            })
-          }
-          if (val.tuesday) {
-            timerJson[2].push({
-              time: val.timerTime,
-              dispense: val.dispenseAmount
-            })
-          }
-          if (val.wednesday) {
-            timerJson[3].push({
-              time: val.timerTime,
-              dispense: val.dispenseAmount
-            })
-          }
-          if (val.thursday) {
-            timerJson[4].push({
-              time: val.timerTime,
-              dispense: val.dispenseAmount
-            })
-          }
-          if (val.friday) {
-            timerJson[5].push({
-              time: val.timerTime,
-              dispense: val.dispenseAmount
-            })
-          }
-          if (val.saturday) {
-            timerJson[6].push({
-              time: val.timerTime,
-              dispense: val.dispenseAmount
-            })
+
+      // custom timer
+      // TIMER:{"time":"2024-02-11 13:29:00","spray":0,"mode":"custom","settings":[["time":"13:30","dispense":"5","time":"13:32","dispense":"6"]]}#
+
+      // preset timer
+      // TIMER:{"time":"2024-02-11 13:29:00","spray":0,"mode":"preset","startTime":"13:30","dispenseAmount":5,"interval":15}#
+      
+      let jsonData 
+      if (dispenser.dispenserId.timerFormat === 'preset') {
+        if (dispenser.dispensertimes.length > 1) {
+            const dispTime = dispenser.dispensertimes
+            const time1 = dispTime[0].timerTime
+            const time2 = dispTime[1].timerTime
+
+            const startTime = moment(time1, 'HH:mm')
+            const endTime = moment(time2, 'HH:mm')
+            const diffInMin = endTime.diff(startTime, 'minutes')
+          jsonData = {
+            mode: 'preset',
+            time: moment().format("YYYY-MM-DD HH:mm:ss"),
+            spray: 0,
+            startTime: dispTime[0].timerTime,
+            dispenseAmount: dispTime[0].dispenseAmount,
+            interval: diffInMin
           }
         }
-        // const vType = val.timerType == 'weekly' ? 'W' : 'D'
-        // const vTime = val.timerTime
-        // const vAmount = String(val.dispenseAmount).padStart(3, '0')
-        // const sunday = val.sunday ? 1 : 0
-        // const monday = val.monday ? 1 : 0
-        // const tuesday = val.tuesday ? 1 : 0
-        // const wednesday = val.wednesday ? 1 : 0
-        // const thursday = val.thursday ? 1 : 0
-        // const friday = val.friday ? 1 : 0
-        // const saturday = val.saturday ? 1 : 0
+      } else {
+        for (let val of dispenser.dispensertimes) {
+          if (val.timerType == 'daily') {
+            for(let i = 0; i < 7; i++) {
+              timerJson[i].push({
+                time: val.timerTime,
+                dispense: val.dispenseAmount
+              })
+            }
+          } else {
+            if (val.sunday) {
+              timerJson[0].push({
+                time: val.timerTime,
+                dispense: val.dispenseAmount
+              })
+            }
+            if (val.monday) {
+              timerJson[1].push({
+                time: val.timerTime,
+                dispense: val.dispenseAmount
+              })
+            }
+            if (val.tuesday) {
+              timerJson[2].push({
+                time: val.timerTime,
+                dispense: val.dispenseAmount
+              })
+            }
+            if (val.wednesday) {
+              timerJson[3].push({
+                time: val.timerTime,
+                dispense: val.dispenseAmount
+              })
+            }
+            if (val.thursday) {
+              timerJson[4].push({
+                time: val.timerTime,
+                dispense: val.dispenseAmount
+              })
+            }
+            if (val.friday) {
+              timerJson[5].push({
+                time: val.timerTime,
+                dispense: val.dispenseAmount
+              })
+            }
+            if (val.saturday) {
+              timerJson[6].push({
+                time: val.timerTime,
+                dispense: val.dispenseAmount
+              })
+            }
+          }
+          // const vType = val.timerType == 'weekly' ? 'W' : 'D'
+          // const vTime = val.timerTime
+          // const vAmount = String(val.dispenseAmount).padStart(3, '0')
+          // const sunday = val.sunday ? 1 : 0
+          // const monday = val.monday ? 1 : 0
+          // const tuesday = val.tuesday ? 1 : 0
+          // const wednesday = val.wednesday ? 1 : 0
+          // const thursday = val.thursday ? 1 : 0
+          // const friday = val.friday ? 1 : 0
+          // const saturday = val.saturday ? 1 : 0
+  
+          // timers.push(`${vType},${vTime},${vAmount},${sunday},${monday},${tuesday},${wednesday},${thursday},${friday},${saturday}`)
+        }
+        jsonData = {
+          mode: 'custom',
+          time: moment().format("YYYY-MM-DD HH:mm:ss"),
+          spray: 0,
+          settings: timerJson
+         }
+      }
 
-        // timers.push(`${vType},${vTime},${vAmount},${sunday},${monday},${tuesday},${wednesday},${thursday},${friday},${saturday}`)
-      }
-      let jsonData = {
-        time: moment().format("YYYY-MM-DD HH:mm:ss"),
-        spray: 0,
-        settings: timerJson
-      }
+      // let jsonData = {
+      //   time: moment().format("YYYY-MM-DD HH:mm:ss"),
+      //   spray: 0,
+      //   settings: timerJson
+      // }
       console.log({jsonData})
-      if (timerJson.length > 0) {
+      if (dispenser.dispensertimes.length > 0) {
         const timerData = `TIMER:${JSON.stringify(jsonData)}#`
         console.log("dataview timer: ", timerData.length, textToDataView(timerData))
 
@@ -578,6 +613,12 @@ const Main: React.FC = () => {
       } else {
         // alert('Nothing to sync')
       }
+    }
+  }
+
+  const testSpray = async () => {
+    if (selectedDevice) {
+      BleClient.write(selectedDevice.address, FRUGAL_SERVICE, FRUGAL_CHARACTERISTIC, textToDataView("DEMO#"))
     }
   }
   return (
@@ -598,6 +639,7 @@ const Main: React.FC = () => {
             dispensers={dispensers}
             onGetDispensers={getDispensers}
             isConnected={isConnected}
+            testSpray={testSpray}
           />
         </Route>
         <Route exact path="/devices/:id" component={DeviceDetail}/>

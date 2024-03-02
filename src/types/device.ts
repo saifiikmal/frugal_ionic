@@ -12,6 +12,7 @@ export interface DeviceProps {
   dispensers: any[],
   onGetDispensers(): any,
   isConnected: boolean,
+  testSpray: any,
 }
 
 export interface DeviceData {

@@ -54,6 +54,7 @@ const Devices: React.FC<{
   dispensers: any[],
   onGetDispensers: any,
   isConnected: boolean,
+  testSpray: any,
 }> = (props: DeviceProps) => {
   const [devices, setDevices] = useState(props.devices)
   const [selectedDevice, setSelectedDevice] = useState(props.selectedDevice)
@@ -228,6 +229,12 @@ const Devices: React.FC<{
     // console.log({camera})
     return camera === 'granted' || camera === 'limited';
   }
+
+  const handleTestSpray = async () => {
+    if (confirm("Are you sure you want to demo spray?")) {
+      props.testSpray()
+    }
+  }
   return (
     <IonPage>
       {/* <IonRouterOutlet>
@@ -389,7 +396,15 @@ const Devices: React.FC<{
               </IonItem>
               </IonCol>
             </IonRow>
-            
+            { props.isConnected && dispenser && props.selectedDevice?.address == dispenser.dispenserId.macAddress &&
+              <IonRow>
+                <IonCol className='ion-margin-top'>
+                  <IonButton expand='block' className="ion-margin-top" onClick={() => handleTestSpray()}>
+                    Demo Spray
+                  </IonButton>
+                </IonCol>
+              </IonRow>
+            }
           </IonGrid>
           </IonContent>
         </IonModal>
