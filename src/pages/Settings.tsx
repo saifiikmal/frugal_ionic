@@ -119,7 +119,7 @@ const Settings: React.FC<{
           <>
             <IonCard>
               <IonCardHeader>
-                <IonCardTitle>Device: {props.deviceData ? props.deviceData.id : ""}</IonCardTitle>
+                <IonCardTitle style={{fontSize: '20px'}}>Device: {props.deviceData ? props.deviceData.id : ""}</IonCardTitle>
               </IonCardHeader>
               <IonCardContent>
                 <IonList>
@@ -134,7 +134,7 @@ const Settings: React.FC<{
             </IonCard>
             <IonCard>
               <IonCardHeader>
-                <IonCardTitle>Device Settings</IonCardTitle>
+                <IonCardTitle style={{fontSize: '20px'}}>Device Settings</IonCardTitle>
               </IonCardHeader>
               <IonCardContent>
                 <IonList>

@@ -146,10 +146,10 @@ const ScheduleSelect: React.FC<ScheduleSelectProps> = (props: ScheduleSelectProp
 
                   {/* <IonCardContent>Card Content</IonCardContent> */}
                       <IonGrid style={found ? {color: 'black'} : {color: '#aaa'}}>
-                        <IonRow style={{height: '170px'}} className="ion-text-center">
+                        <IonRow style={{height: '200px'}} className="ion-text-center">
                           <IonCol>
                             <IonIcon className="ion-margin-top" icon={bulbOutline} size="large" color={found ? 'warning' : 'medium'} />
-                            <IonCardTitle className="ion-margin-top">{dispenser.dispenserId.name}</IonCardTitle>
+                            <IonCardTitle style={{fontSize: '20px'}} className="ion-margin-top">{dispenser.dispenserId.name}</IonCardTitle>
                             <IonCardSubtitle style={{marginTop: '10px'}}>{dispenser.dispenserId.macAddress}</IonCardSubtitle> <br />
                             { props.isConnected && props.selectedDevice?.address == dispenser.dispenserId.macAddress ? 
                             <IonBadge color="success">Connected</IonBadge> : null }

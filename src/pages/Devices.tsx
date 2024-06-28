@@ -46,6 +46,7 @@ import { BluetoothDevice, DeviceProps } from '../types/device'
 import DispenserAPI from '../api/dispenser'
 import { Route } from 'react-router';
 import DeviceDetail from './DeviceDetail';
+import { Capacitor } from '@capacitor/core';
 
 const Devices: React.FC<{
   devices: BluetoothDevice[], 
@@ -183,11 +184,13 @@ const Devices: React.FC<{
           return;
         }
 
-        const { available} = await BarcodeScanner.isGoogleBarcodeScannerModuleAvailable()
-        // console.log({available})
+        if (Capacitor.getPlatform() === 'android') {
+          const { available} = await BarcodeScanner.isGoogleBarcodeScannerModuleAvailable()
+          // console.log({available})
 
-        if (!available) {
-          await BarcodeScanner.installGoogleBarcodeScannerModule()
+          if (!available) {
+            await BarcodeScanner.installGoogleBarcodeScannerModule()
+          }
         }
 
         scanQR()
@@ -281,10 +284,10 @@ const Devices: React.FC<{
 
                   {/* <IonCardContent>Card Content</IonCardContent> */}
                       <IonGrid style={found ? {color: 'black'} : {color: '#aaa'}}>
-                        <IonRow style={{height: '170px'}} className="ion-text-center">
+                        <IonRow style={{height: '200px'}} className="ion-text-center">
                           <IonCol>
                             <IonIcon className="ion-margin-top" icon={bulbOutline} size="large" color={found ? 'warning' : 'medium'} />
-                            <IonCardTitle className="ion-margin-top">{dispenser.dispenserId.name}</IonCardTitle>
+                            <IonCardTitle style={{fontSize: '20px'}} className="ion-margin-top">{dispenser.dispenserId.name}</IonCardTitle>
                             <IonCardSubtitle style={{marginTop: '10px'}}>{dispenser.dispenserId.macAddress}</IonCardSubtitle><br />
                             { props.isConnected && props.selectedDevice?.address == dispenser.dispenserId.macAddress ? 
                             <IonBadge color="success">Connected</IonBadge> : null }

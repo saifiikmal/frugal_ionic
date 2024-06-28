@@ -78,7 +78,7 @@ const Menu: React.FC = () => {
       <IonContent className="ion-padding">This is the menu content.</IonContent> */}
       <IonContent>
         <IonList id="inbox-list">
-          <IonListHeader>Frugal</IonListHeader>
+          <IonListHeader>XMOS IoT</IonListHeader>
           <IonNote className="ion-margin-top">{ user ? user.email : '' }</IonNote>
           {appPages.map((appPage, index) => {
             return (

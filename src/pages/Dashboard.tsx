@@ -72,7 +72,7 @@ const Dashboard: React.FC<DashboardProps> = ({ match }) => {
                     <IonRow style={{height: '100px'}} className="ion-text-center">
                       <IonCol>
                         {/* <IonIcon className="ion-margin-top" icon={bulbOutline} size="large" color='warning' /> */}
-                        <IonCardTitle className="ion-margin-top">{dispenser.dispenserId.name}</IonCardTitle>
+                        <IonCardTitle style={{fontSize: '20px'}} className="ion-margin-top">{dispenser.dispenserId.name}</IonCardTitle>
                         <IonCardSubtitle style={{marginTop: '10px'}}>{dispenser.dispenserId.macAddress}</IonCardSubtitle><br />
                       </IonCol>
                       {/* <IonCol>
@@ -94,7 +94,7 @@ const Dashboard: React.FC<DashboardProps> = ({ match }) => {
                 <IonRow style={{ height: '100%'}}>
                   <IonCol style={{ }} className='ion-margin ion-text-center'>
                     <IonIcon icon={heartOutline} size='large' /> <br />
-                    <IonCardTitle className="ion-margin-top">{
+                    <IonCardTitle style={{fontSize: '20px'}} className="ion-margin-top">{
                     dispenser.latestcanister.length > 0 ? 
                       dispenser.latestcanister[0].canisterId.remainingSprays > 0 ?
                         dispenser.latestcanister[0].canisterId.remainingSprays
@@ -119,7 +119,7 @@ const Dashboard: React.FC<DashboardProps> = ({ match }) => {
                 <IonRow style={{ height: '100%'}}>
                   <IonCol style={{ }} className='ion-margin ion-text-center'>
                     <IonIcon icon={batteryChargingOutline} size='large' /> <br />
-                    <IonCardTitle className="ion-margin-top">{
+                    <IonCardTitle style={{fontSize: '20px'}} className="ion-margin-top">{
                     dispenser.latestcanister.length > 0 ? 
                       Math.round((dispenser.latestcanister[0].canisterId.remainingSprays / dispenser.latestcanister[0].canisterId.initialSprays) * 100) > 0 ?
                       Math.round((dispenser.latestcanister[0].canisterId.remainingSprays / dispenser.latestcanister[0].canisterId.initialSprays) * 100) 
@@ -146,7 +146,7 @@ const Dashboard: React.FC<DashboardProps> = ({ match }) => {
                 <IonRow style={{ height: '100%'}}>
                   <IonCol style={{ }} className='ion-margin ion-text-center'>
                     <IonIcon icon={timeOutline} size='large' /> <br />
-                    <IonCardTitle className="ion-margin-top">{
+                    <IonCardTitle style={{fontSize: '20px'}} className="ion-margin-top">{
                     dispenser.dispenserId.lastSprayDate == null || dispenser.dispenserId.lastSprayDate === "1970-01-01T00:00:00.000Z" ? "-" : moment(dispenser.dispenserId.lastSprayDate).utc().format("DD/MM/YY, h:mm A")
                     } 
                     </IonCardTitle>

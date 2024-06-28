@@ -12,6 +12,7 @@ import { useAuth } from '../context/authContext'
 
 import { BluetoothDevice } from '../types/device'
 import { useEffect, useRef } from 'react';
+import { Capacitor } from '@capacitor/core';
 
 interface HomeProps {
   selectedDevice: BluetoothDevice | null,
@@ -57,7 +58,7 @@ const Home: React.FC<{
     <IonPage>
       <IonHeader>
         <IonToolbar>
-          <IonTitle>Frugal</IonTitle>
+          <IonTitle>XMOS IoT</IonTitle>
           { props.isConnected && props.selectedDevice ? <IonButtons slot="end" style={{ marginRight: '15px'}}>
               <IonButton fill="solid" color={'primary'} onClick={() => disconnectDevice()}>
                 Disconnect
@@ -68,7 +69,7 @@ const Home: React.FC<{
       <IonContent fullscreen>
         <IonHeader collapse="condense">
           <IonToolbar>
-            <IonTitle size="large">Frugal</IonTitle>
+            <IonTitle size="large">XMOS IoT</IonTitle>
           </IonToolbar>
         </IonHeader>
         <IonGrid className='ion-margin-top'>
@@ -79,7 +80,7 @@ const Home: React.FC<{
                 <IonRow style={{ height: '100%'}}>
                   <IonCol style={{ }} className='ion-margin ion-text-center'>
                     <IonIcon icon={bulbOutline} size='large' /> <br />
-                    <IonCardTitle className="ion-margin-top">Devices
+                    <IonCardTitle style={{fontSize: '20px'}} className="ion-margin-top">Devices
                       
                       </IonCardTitle>
                   </IonCol>
@@ -98,7 +99,7 @@ const Home: React.FC<{
                 <IonRow style={{ height: '100%'}}>
                   <IonCol  style={{ }} className='ion-margin ion-text-center'>
                     <IonIcon icon={bluetoothOutline} size='large' /> <br />
-                    <IonCardTitle className='ion-margin-top'>Connect Device</IonCardTitle>
+                    <IonCardTitle style={{fontSize: '20px'}} className='ion-margin-top'>Connect Device</IonCardTitle>
                   </IonCol>
                   {/* <IonCol  className='ion-margin'>
                     <IonCardTitle className='ion-text-wrap'>Connect Device</IonCardTitle>
@@ -116,7 +117,7 @@ const Home: React.FC<{
                 <IonRow style={{ height: '100%'}}>
                   <IonCol  style={{ }} className='ion-margin ion-text-center'>
                     <IonIcon icon={informationOutline} size='large' /> <br />
-                    <IonCardTitle className='ion-margin-top'>Dashboard</IonCardTitle>
+                    <IonCardTitle style={{fontSize: '20px'}} className='ion-margin-top'>Dashboard</IonCardTitle>
                   </IonCol>
                   {/* <IonCol size="6" className='ion-margin'>
                     <IonCardTitle>Dashboard</IonCardTitle>
@@ -131,7 +132,7 @@ const Home: React.FC<{
                 <IonRow style={{ height: '100%'}}>
                   <IonCol  style={{ }} className='ion-margin ion-text-center'>
                     <IonIcon icon={calendarOutline} size='large' /> <br />
-                    <IonCardTitle className='ion-margin-top'>Schedule</IonCardTitle>
+                    <IonCardTitle style={{fontSize: '20px'}} className='ion-margin-top'>Schedule</IonCardTitle>
                   </IonCol>
                   {/* <IonCol size="6" className='ion-margin'>
                     <IonCardTitle>Schedule</IonCardTitle>
@@ -149,7 +150,7 @@ const Home: React.FC<{
                 <IonRow style={{ height: '100%'}}>
                   <IonCol style={{ }} className='ion-margin ion-text-center'>
                     <IonIcon icon={qrCodeOutline} size='large' /><br />
-                    <IonCardTitle className='ion-margin-top'>Register Canister</IonCardTitle>
+                    <IonCardTitle style={{fontSize: '20px'}} className='ion-margin-top'>Register Canister</IonCardTitle>
                   </IonCol>
                   {/* <IonCol size="6" className='ion-margin' >
                     <IonCardTitle>Register</IonCardTitle>
@@ -164,7 +165,7 @@ const Home: React.FC<{
                 <IonRow style={{ height: '100%'}}>
                   <IonCol style={{ }} className='ion-margin ion-text-center'>
                     <IonIcon icon={logOutOutline} size='large' /><br />
-                    <IonCardTitle className='ion-margin-top'>Sign Out</IonCardTitle>
+                    <IonCardTitle style={{fontSize: '20px'}} className='ion-margin-top'>Sign Out</IonCardTitle>
                   </IonCol>
                   {/* <IonCol size="6" className='ion-margin'>
                     <IonCardTitle>Sign Out</IonCardTitle>
@@ -176,7 +177,7 @@ const Home: React.FC<{
           </IonRow>
 
           <IonRow>
-            <IonCol className='ion-text-center ion-margin-top'>Version { import.meta.env.VITE_APP_VERSION}</IonCol>
+            <IonCol className='ion-text-center ion-margin-top'>Version { Capacitor.getPlatform() == 'android' ? import.meta.env.VITE_APP_VERSION_ANDROID : import.meta.env.VITE_APP_VERSION_IOS }</IonCol>
           </IonRow>
 
           {/* <IonRow>

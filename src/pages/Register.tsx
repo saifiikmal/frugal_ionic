@@ -27,6 +27,7 @@ import CanisterAPI from '../api/canister'
 // import { BluetoothSerial } from '@awesome-cordova-plugins/bluetooth-serial';
 import { BleClient, dataViewToText, textToDataView } from '@capacitor-community/bluetooth-le';
 import moment from 'moment'
+import { Capacitor } from '@capacitor/core';
 interface RegisterProps {
   selectedDevice: BluetoothDevice | null,
   dispenser: any,isConnected: boolean,
@@ -76,11 +77,13 @@ const Register: React.FC<{
           return;
         }
 
-        const { available} = await BarcodeScanner.isGoogleBarcodeScannerModuleAvailable()
-        // console.log({available})
+        if (Capacitor.getPlatform() === 'android') {
+          const { available} = await BarcodeScanner.isGoogleBarcodeScannerModuleAvailable()
+          // console.log({available})
 
-        if (!available) {
-          await BarcodeScanner.installGoogleBarcodeScannerModule()
+          if (!available) {
+            await BarcodeScanner.installGoogleBarcodeScannerModule()
+          }
         }
 
         scanQR()

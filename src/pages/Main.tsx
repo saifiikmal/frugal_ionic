@@ -233,7 +233,7 @@ const Main: React.FC = () => {
         setIsLoading(true)
 
         if (isConnected) {
-          await BleClient.disconnect(device.address);
+          await BleClient.disconnect(device.id);
           console.log('disconnected from device', device);
           setSelectedDevice(null)
           setIsLoading(false)
@@ -252,13 +252,13 @@ const Main: React.FC = () => {
         setIsLoading(true)
 
         if (isConnected) {
-          await BleClient.disconnect(device.address);
+          await BleClient.disconnect(device.id);
           console.log('disconnected from device', device);
           setSelectedDevice(null)
           setIsLoading(false)
           setConnected(false)
         } else {
-          await BleClient.connect(device.address, (deviceId) => {
+          await BleClient.connect(device.id, (deviceId) => {
             // console.log('onDisconnected: ', deviceId)
             setIsLoading(false)
             setConnected(false)
@@ -271,7 +271,7 @@ const Main: React.FC = () => {
 
 
           await BleClient.startNotifications(
-            device.address,
+            device.id,
             FRUGAL_SERVICE,
             FRUGAL_CHARACTERISTIC,
             async (value) => {
@@ -395,7 +395,7 @@ const Main: React.FC = () => {
     //   isConnected
     // })
     if (!isProcessing && selectedDevice) {
-      await BleClient.write(selectedDevice.address, FRUGAL_SERVICE, FRUGAL_CHARACTERISTIC, textToDataView("GET#"))
+      await BleClient.write(selectedDevice.id, FRUGAL_SERVICE, FRUGAL_CHARACTERISTIC, textToDataView("GET#"))
     }
     setIsLoading(false)
   }
@@ -424,7 +424,7 @@ const Main: React.FC = () => {
         }
         // setProcessing(true)
         const syncData = `SYNC:${JSON.stringify(jsonData)}#`
-        await BleClient.write(selectedDevice.address, FRUGAL_SERVICE, FRUGAL_CHARACTERISTIC, textToDataView(syncData))
+        await BleClient.write(selectedDevice.id, FRUGAL_SERVICE, FRUGAL_CHARACTERISTIC, textToDataView(syncData))
       }
 
     }
@@ -444,20 +444,25 @@ const Main: React.FC = () => {
         await BleClient.requestLEScan(
           {
             // services: ["4fafc201-1fb5-459e-8fcc-c5c9c331914b"],
-            name: 'Frugal'
+            namePrefix: 'FRUGAL'
           },
           (result) => {
             console.log('received new scan result', result);
-            let deviceName = result.localName ? result.localName : "Unknown"
+            let deviceName = result.localName ? result.localName : result.device.name ? result.device.name : "Unknown"
+            
+            let parseDevice = deviceName.split(" ")
+            deviceName = parseDevice[0]
+            let macAddress = parseDevice[1]
+            
             if (dispensers.length > 0) {
-              const found = dispensers.find(x => result.device.deviceId == x.dispenserId.macAddress)
+              const found = dispensers.find(x => macAddress == x.dispenserId.macAddress)
               if (found) {
                 deviceName = found.dispenserId.name
               }
             } 
             list.push({
               id: result.device.deviceId,
-              address: result.device.deviceId,
+              address: macAddress,
               name: deviceName
             })
           }
@@ -605,7 +610,7 @@ const Main: React.FC = () => {
         for (let i=0; i < timerData.length; i+= 500) {
           const cutData = timerData.substr(i, 500)
           console.log("timerdata: ", cutData)
-          await BleClient.write(selectedDevice.address, FRUGAL_SERVICE, FRUGAL_CHARACTERISTIC, textToDataView(cutData))
+          await BleClient.write(selectedDevice.id, FRUGAL_SERVICE, FRUGAL_CHARACTERISTIC, textToDataView(cutData))
         }
 
         // await BluetoothSerial.write(`TIMER:${timers.join('|')}`)
@@ -618,7 +623,7 @@ const Main: React.FC = () => {
 
   const testSpray = async () => {
     if (selectedDevice) {
-      BleClient.write(selectedDevice.address, FRUGAL_SERVICE, FRUGAL_CHARACTERISTIC, textToDataView("DEMO#"))
+      BleClient.write(selectedDevice.id, FRUGAL_SERVICE, FRUGAL_CHARACTERISTIC, textToDataView("DEMO#"))
     }
   }
   return (

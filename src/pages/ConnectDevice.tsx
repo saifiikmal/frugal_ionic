@@ -237,10 +237,10 @@ const Devices: React.FC<{
 
                   {/* <IonCardContent>Card Content</IonCardContent> */}
                       <IonGrid>
-                        <IonRow style={{height: '170px'}} className="ion-text-center">
+                        <IonRow style={{height: '200px'}} className="ion-text-center">
                           <IonCol>
                             <IonIcon className="ion-margin-top" icon={bulbOutline} size="large" color='warning' />
-                            <IonCardTitle className="ion-margin-top">{device.name}</IonCardTitle>
+                            <IonCardTitle style={{fontSize: '20px'}} className="ion-margin-top">{device.name}</IonCardTitle>
                             <IonCardSubtitle style={{marginTop: '10px'}}>{device.address}</IonCardSubtitle><br />
                             { props.isConnected && props.selectedDevice?.address == device.address ? 
                             <IonBadge color="success">Connected</IonBadge> : null }
